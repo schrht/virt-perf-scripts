@@ -1,0 +1,2 @@
+fio --filename=./testfile --name=randrw-test --ioengine=libaio --iodepth=16 --rw=randrw --bs=32k --direct=1 --size=512M --numjobs=4 --group_reporting --runtime=10 --output-format=normal,json+ --time_based --output=randrw-test.log
+fio --filename=./testfile --name=randread-test --ioengine=libaio --iodepth=16 --rw=randread --bs=32k --direct=1 --size=512M --numjobs=4 --group_reporting --runtime=10 --output-format=normal,json+ --time_based --output=randread-test.log
