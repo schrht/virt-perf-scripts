@@ -1,0 +1,31 @@
+[global]
+#directory=/mnt/vol0	# ebs-enhanced
+#filename=/dev/xvdf	# ebs-enhanced
+direct=1
+rw=randread		# randread /randwrite
+bs=16k
+#size=1G		# ebs-enhanced
+numjobs=16
+time_based
+runtime=180
+group_reporting
+norandommap
+ioengine=libaio		# ebs-enhanced
+iodepth=8		# ebs-enhanced
+
+[job1]
+filename=/dev/nvme1n1
+
+[job2]
+filename=/dev/nvme2n1
+
+[job3]
+filename=/dev/nvme3n1
+
+[job4]
+filename=/dev/nvme4n1
+
+[job5]
+filename=/dev/nvme5n1
+
+

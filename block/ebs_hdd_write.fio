@@ -1,0 +1,18 @@
+[global]
+filename=/dev/xvdf
+direct=1
+rw=write		# read / write
+randrepeat=0
+ioengine=libaio
+bs=1024k
+iodepth=8
+time_based
+runtime=180
+
+[hit-io-bw]
+stonewall
+
+#size=1G		# lead performance regression
+#numjobs=16		# lead performance regression
+#group_reporting	# lead performance regression
+

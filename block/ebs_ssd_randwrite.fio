@@ -1,0 +1,18 @@
+[global]
+#directory=/mnt/vol0	# ebs-enhanced
+filename=/dev/xvdf	# ebs-enhanced
+direct=1
+rw=randwrite		# randread /randwrite
+bs=16k
+#size=1G		# ebs-enhanced
+numjobs=16
+time_based
+runtime=180
+group_reporting
+norandommap
+ioengine=libaio		# ebs-enhanced
+iodepth=8		# ebs-enhanced
+
+[hit-io-bw]
+stonewall
+
