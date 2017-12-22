@@ -69,16 +69,20 @@ class StoragePerformanceTest:
         self.m_fs_type='xfs'
 
         # run how many round performance tets, if 0, only generate report
-        self.m_test_round=2
+        self.m_test_round=5
         self.m_direct='1'
         # 1 cost string
         self.m_numbjobs='16'
 
         #m_rw=['write','read','randwrite','randread','randrw']
         #4 loop array
-        self.m_rw= ['write','read','randrw']
-        self.m_bs=['4k','128k']
-        self.m_iodepth=['1','64']
+
+        # *) rw, "read write randread randwrite rw randrw" 
+        # *) bs, "4k 16k 64k 256k" 
+        # *) iodepth, "1 8 64", IO Engine = libaio 
+        self.m_rw= ['read', 'write', 'randread', 'randwrite', 'rw', 'randrw']
+        self.m_bs=['4k','16k', '64k','256k']
+        self.m_iodepth=['1', '8', '64']
         self.m_disk_filename_dic={}
 
         self.m_dir_result=r"./csv_result"
@@ -198,6 +202,9 @@ class StoragePerformanceTest:
                             print "current test number is:" ,file_number
                             print "======================================================\n"
                             file_number = file_number+1
+
+
+
 
 if __name__ == '__main__':
 
