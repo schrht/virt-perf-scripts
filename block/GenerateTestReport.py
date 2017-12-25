@@ -11,6 +11,7 @@
 # Interface between StoragePerformanceTest.py
 # StoragePerformanceTest.py should do:
 # 1. the fio outputs should be at least in json+ format
+#    the "fio --group_reporting" must be used
 # 2. save the fio outputs into *.fiolog
 # 3. put all *.fiolog files into ./fio_result/
 # 4. empty ./fio_report/ folder
@@ -34,7 +35,7 @@ class FioPerformanceKPIs():
     # Each item represents a single fio test and it is in python dict format.
     perf_kpi_list = []
 
-    def file_to_raw(self, params):
+    def file_to_raw(self, params={}):
         '''
         This function open a specified fio output file and read the first json block which is expected to be the fio outputs in json/json+ format.
         And convert the json block into the json format in python. With the help of function byteify, it converts the unicode string to bytes.
@@ -100,13 +101,13 @@ class FioPerformanceKPIs():
 
         return (0, raw_data)
 
-    def load_raw_data(self, params):
+    def load_raw_data(self, params={}):
         '''
         This function loads json raw data from a sort of fio output files and save them into self.raw_data_list.
         '''
 
         # Parse required params
-        if 'data_file' not in params:
+        if 'result_path' not in params:
             print 'Missing required params: params[result_path]'
             return 1
 
@@ -121,22 +122,79 @@ class FioPerformanceKPIs():
 
         return 0
 
-    def raw_to_kpi(self, params):
+    def raw_to_kpi(self, params={}):
         '''
         This function extracts performance KPIs from a tuple of raw data.
         '''
-        pass
 
-    def extracts_perf_kpis(self, params):
+        # Parse required params
+        if 'raw_data' not in params:
+            print 'Missing required params: params[raw_data]'
+            return (1, None)
+
+        raw_data = params['raw_data']
+        print raw_data
+
+        perf_kpi = {}
+
+        try:
+            perf_kpi['rw'] = raw_data['jobs'][0]['job options']['rw']
+            perf_kpi['bs'] = raw_data['jobs'][0]['job options']['bs']
+            perf_kpi['iodepth'] = raw_data['jobs'][0]['job options']['iodepth']
+            perf_kpi['numjobs'] = raw_data['jobs'][0]['job options']['numjobs']
+
+            perf_kpi['util'] = raw_data['disk_util'][0]['aggr_util']
+
+            # The unit for "bw" is "KiB/s", for "lat" is "ns".
+            perf_kpi['r-bw'] = raw_data['jobs'][0]['read']['bw']
+            perf_kpi['r-iops'] = raw_data['jobs'][0]['read']['iops']
+            perf_kpi['r-lat'] = raw_data['jobs'][0]['read']['clat_ns']['mean']
+            perf_kpi['w-bw'] = raw_data['jobs'][0]['write']['bw']
+            perf_kpi['w-iops'] = raw_data['jobs'][0]['write']['iops']
+            perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['clat_ns']['mean']
+
+            if perf_kpi['r-bw'] > 0 and perf_kpi['w-bw'] > 0:
+                perf_kpi['bw'] = (perf_kpi['r-bw'] + perf_kpi['w-bw']) / 2
+                perf_kpi['iops'] = (
+                    perf_kpi['r-iops'] + perf_kpi['w-iops']) / 2
+                perf_kpi['lat'] = (perf_kpi['r-lat'] + perf_kpi['w-lat']) / 2
+            elif perf_kpi['r-bw'] > 0:
+                perf_kpi['bw'] = perf_kpi['r-bw']
+                perf_kpi['iops'] = perf_kpi['r-iops']
+                perf_kpi['lat'] = perf_kpi['r-lat']
+            elif perf_kpi['w-bw'] > 0:
+                perf_kpi['bw'] = perf_kpi['w-bw']
+                perf_kpi['iops'] = perf_kpi['w-iops']
+                perf_kpi['lat'] = perf_kpi['w-lat']
+            else:
+                raise Exception(
+                    'the bandwidth for both read and write is zero.')
+
+        except Exception, err:
+            print 'Error while extracting performance KPIs: %s' % err
+            return (1, None)
+
+        return (0, perf_kpi)
+
+    def extracts_perf_kpis(self, params={}):
         '''
         This function extracts performance KPIs from self.raw_data_list and save the tuples into self.perf_kpi_list.
         '''
-        pass
+
+        (result, perf_kpi) = perf_kpis.raw_to_kpi({
+            'raw_data':
+            self.raw_data_list[0]
+        })
+        if result == 0:
+            print 'perf_kpi: ', perf_kpi
+        else:
+            print 'error'
 
 
 if __name__ == '__main__':
 
     perf_kpis = FioPerformanceKPIs()
     perf_kpis.load_raw_data({'result_path': './block/samples'})
+    perf_kpis.extracts_perf_kpis()
 
     exit(0)
