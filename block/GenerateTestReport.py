@@ -8,8 +8,17 @@
 # - load the dicts into PrettyTalbe.
 # - show it or export as csv files.
 
+# Interface between StoragePerformanceTest.py
+# StoragePerformanceTest.py should do:
+# 1. the fio outputs should be at least in json+ format
+# 2. save the fio outputs into *.fiolog
+# 3. put all *.fiolog files into ./fio_result/
+# 4. empty ./fio_report/ folder
+# 5. pass the additional information by "fio --description"
+
 import json
 import re
+import os
 
 
 class FioPerformanceKPIs():
@@ -95,7 +104,22 @@ class FioPerformanceKPIs():
         '''
         This function loads json raw data from a sort of fio output files and save them into self.raw_data_list.
         '''
-        pass
+
+        # Parse required params
+        if 'data_file' not in params:
+            print 'Missing required params: params[result_path]'
+            return 1
+
+        # load raw data from files
+        for basename in os.listdir(params['result_path']):
+            filename = params['result_path'] + '/' + basename
+
+            if filename.endswith('.fiolog') and os.path.isfile(filename):
+                (result, raw_data) = self.file_to_raw({'data_file': filename})
+                if result == 0:
+                    self.raw_data_list.append(raw_data)
+
+        return 0
 
     def raw_to_kpi(self, params):
         '''
@@ -113,16 +137,6 @@ class FioPerformanceKPIs():
 if __name__ == '__main__':
 
     perf_kpis = FioPerformanceKPIs()
-
-    params = {
-        'data_file':
-        '/home/cheshi/workspace/vsc_workspace/virt-perf-scripts/block/samples/randread-test.log.sample'
-    }
-    (result, raw_data) = perf_kpis.file_to_raw(params)
-
-    if result == 0:
-        print raw_data
-    else:
-        print 'error!'
+    perf_kpis.load_raw_data({'result_path': './block/samples'})
 
     exit(0)
