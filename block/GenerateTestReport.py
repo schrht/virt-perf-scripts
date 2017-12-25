@@ -183,7 +183,7 @@ class FioPerformanceKPIs():
         # Extracts performance KPIs
         for raw_data in self.raw_data_list:
                 (result, perf_kpi) = perf_kpis.raw_to_kpi({'raw_data':raw_data})
-        if result == 0:
+                if result == 0:
                     self.perf_kpi_list.append(perf_kpi)
 
         return 0
