@@ -147,10 +147,10 @@ class FioPerformanceKPIs():
             # The unit for "bw" is "KiB/s", for "lat" is "ns".
             perf_kpi['r-bw'] = raw_data['jobs'][0]['read']['bw']
             perf_kpi['r-iops'] = raw_data['jobs'][0]['read']['iops']
-            perf_kpi['r-lat'] = raw_data['jobs'][0]['read']['clat_ns']['mean']
+            perf_kpi['r-lat'] = raw_data['jobs'][0]['read']['lat_ns']['mean']
             perf_kpi['w-bw'] = raw_data['jobs'][0]['write']['bw']
             perf_kpi['w-iops'] = raw_data['jobs'][0]['write']['iops']
-            perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['clat_ns']['mean']
+            perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['lat_ns']['mean']
 
             if perf_kpi['r-bw'] > 0 and perf_kpi['w-bw'] > 0:
                 perf_kpi['bw'] = (perf_kpi['r-bw'] + perf_kpi['w-bw']) / 2
