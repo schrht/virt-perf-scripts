@@ -79,8 +79,8 @@ class StoragePerformanceTest:
         self.m_iodepth = ['1', '8', '64']
         self.m_disk_filename_dic = {}
 
-        self.m_dir_result = r"./csv_result"
-        self.m_dir_report = r"./csv_report"
+        self.m_dir_result = r"./fio_result"
+        self.m_dir_report = r"./fio_report"
 
     def parse_argument(self):
         """
@@ -247,16 +247,21 @@ class StoragePerformanceTest:
                             output_name = "_".join(seq)
                             output_name = output_name
                             output_name = output_name.replace(os.sep, '')
-                            output_name_csv = output_name + ".csv"
-                            output_name_csv = self.m_dir_result + os.sep + output_name_csv
+                            output_name_fio = output_name + ".fiolog"
+                            output_name_fio = self.m_dir_result + os.sep + output_name_fio
                             if not os.path.exists(self.m_dir_result):
                                 os.mkdir(self.m_dir_result)
 
-                            command = "fio -filename=%s --name=%s --ioengine=libaio --iodepth=%s --rw=%s --bs=%s --direct=%s --size=2048M --numjobs=%s --runtime=%s --group_reporting --output=%s" % (
+                            # TODO: implement this interface in the future if needed.
+                            description = 'N/A'
+
+                            command = 'fio --filename=%s --name=%s --ioengine=libaio --iodepth=%s --rw=%s \
+                            --bs=%s --direct=%s --size=512M --numjobs=%s --group_reporting --time_based --runtime=%s \
+                            --output-format=normal,json+ --output=%s --description="%s"' % (
                                 m_filename_item, output_name, m_iodepth_item,
                                 m_rw_item, m_bs_item, self.m_direct,
                                 self.m_numbjobs, self.m_runtime,
-                                output_name_csv)
+                                output_name_fio, description)
                             os.system(command)
                             time.sleep(1)
                             print command
