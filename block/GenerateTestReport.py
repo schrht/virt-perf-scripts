@@ -132,10 +132,9 @@ class FioPerformanceKPIs():
             print 'Missing required params: params[raw_data]'
             return (1, None)
 
-        raw_data = params['raw_data']
-        print raw_data
-
+        # Extract the performance KPIs
         perf_kpi = {}
+        raw_data = params['raw_data']
 
         try:
             perf_kpi['rw'] = raw_data['jobs'][0]['job options']['rw']
@@ -181,20 +180,20 @@ class FioPerformanceKPIs():
         This function extracts performance KPIs from self.raw_data_list and save the tuples into self.perf_kpi_list.
         '''
 
-        (result, perf_kpi) = perf_kpis.raw_to_kpi({
-            'raw_data':
-            self.raw_data_list[0]
-        })
+        # Extracts performance KPIs
+        for raw_data in self.raw_data_list:
+                (result, perf_kpi) = perf_kpis.raw_to_kpi({'raw_data':raw_data})
         if result == 0:
-            print 'perf_kpi: ', perf_kpi
-        else:
-            print 'error'
+                    self.perf_kpi_list.append(perf_kpi)
 
+        return 0
 
 if __name__ == '__main__':
 
     perf_kpis = FioPerformanceKPIs()
     perf_kpis.load_raw_data({'result_path': './block/samples'})
     perf_kpis.extracts_perf_kpis()
+
+    print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
 
     exit(0)
