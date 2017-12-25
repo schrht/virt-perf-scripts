@@ -9,6 +9,7 @@
 # - show it or export as csv files.
 
 import json
+import re
 
 
 class FioPerformanceKPIs():
@@ -44,17 +45,49 @@ class FioPerformanceKPIs():
             else:
                 return inputs
 
+        # Parse required params
         if 'data_file' not in params:
             print 'Missing required params: params[data_file]'
-            return (1, )
+            return (1, None)
+
+        # Generate json file with the first json block in data file
+        try:
+            with open(params['data_file'], 'r') as f:
+                file_content = f.readlines()
+
+            # Locate the first json block
+            begin = end = num = 0
+            while num < len(file_content):
+                if re.search(r'^{', file_content[num]):
+                    begin = num
+                    break
+                num += 1
+            while num < len(file_content):
+                if re.search(r'^}', file_content[num]):
+                    end = num
+                    break
+                num += 1
+
+            # Write the json block into file
+            if begin < end:
+                with open(params['data_file'] + '.json', 'w') as f:
+                    f.writelines(file_content[begin:end + 1])
+            else:
+                print 'Cannot found validate json block in file: %s' % params[
+                    'data_file']
+                return (1, None)
+
+        except Exception, err:
+            print 'Error while handling data file: %s' % err
+            return (1, None)
 
         try:
-            with open(params['data_file'], 'r') as json_file:
+            with open(params['data_file'] + '.json', 'r') as json_file:
                 json_data = json.load(json_file)
                 raw_data = byteify(json_data)
         except Exception, err:
             print 'Error while handling data file: %s' % err
-            return (1, )
+            return (1, None)
 
         return (0, raw_data)
 
@@ -83,7 +116,7 @@ if __name__ == '__main__':
 
     params = {
         'data_file':
-        '/home/cheshi/workspace/vsc_workspace/virt-perf-scripts/block/samples/1.sample'
+        '/home/cheshi/workspace/vsc_workspace/virt-perf-scripts/block/samples/randread-test.log.sample'
     }
     (result, raw_data) = perf_kpis.file_to_raw(params)
 
