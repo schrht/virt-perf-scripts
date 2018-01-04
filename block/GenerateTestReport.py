@@ -125,6 +125,7 @@ class FioPerformanceKPIs():
     def raw_to_kpi(self, params={}):
         '''
         This function extracts performance KPIs from a tuple of raw data.
+        Coverts the units and format the value so people can read them conveniently.
         '''
 
         # Parse required params
@@ -144,16 +145,21 @@ class FioPerformanceKPIs():
 
             perf_kpi['util'] = raw_data['disk_util'][0]['aggr_util']
 
-            # The unit for "bw" is "KiB/s", for "lat" is "ns".
-            perf_kpi['r-bw'] = raw_data['jobs'][0]['read']['bw']
-            perf_kpi['r-iops'] = raw_data['jobs'][0]['read']['iops']
-            perf_kpi['r-lat'] = raw_data['jobs'][0]['read']['lat_ns']['mean']
-            perf_kpi['w-bw'] = raw_data['jobs'][0]['write']['bw']
-            perf_kpi['w-iops'] = raw_data['jobs'][0]['write']['iops']
-            perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['lat_ns']['mean']
-
+            # The unit of "bw" was "KiB/s", convert to "MiB/s"
+            perf_kpi['r-bw'] = raw_data['jobs'][0]['read']['bw'] / 1024.0
+            perf_kpi['w-bw'] = raw_data['jobs'][0]['write']['bw'] / 1024.0
             perf_kpi['bw'] = perf_kpi['r-bw'] + perf_kpi['w-bw']
+
+            # The IOPS was a decimal, make it an integer
+            perf_kpi['r-iops'] = int(raw_data['jobs'][0]['read']['iops'])
+            perf_kpi['w-iops'] = int(raw_data['jobs'][0]['write']['iops'])
             perf_kpi['iops'] = perf_kpi['r-iops'] + perf_kpi['w-iops']
+
+            # The unit of "lat" was "ns", convert to "ms"
+            perf_kpi['r-lat'] = raw_data['jobs'][0]['read']['lat_ns'][
+                'mean'] / 1000000.0
+            perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['lat_ns'][
+                'mean'] / 1000000.0
             perf_kpi['lat'] = perf_kpi['r-lat'] + perf_kpi['w-lat']
 
         except Exception, err:
