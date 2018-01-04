@@ -152,22 +152,9 @@ class FioPerformanceKPIs():
             perf_kpi['w-iops'] = raw_data['jobs'][0]['write']['iops']
             perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['lat_ns']['mean']
 
-            if perf_kpi['r-bw'] > 0 and perf_kpi['w-bw'] > 0:
-                perf_kpi['bw'] = (perf_kpi['r-bw'] + perf_kpi['w-bw']) / 2
-                perf_kpi['iops'] = (
-                    perf_kpi['r-iops'] + perf_kpi['w-iops']) / 2
-                perf_kpi['lat'] = (perf_kpi['r-lat'] + perf_kpi['w-lat']) / 2
-            elif perf_kpi['r-bw'] > 0:
-                perf_kpi['bw'] = perf_kpi['r-bw']
-                perf_kpi['iops'] = perf_kpi['r-iops']
-                perf_kpi['lat'] = perf_kpi['r-lat']
-            elif perf_kpi['w-bw'] > 0:
-                perf_kpi['bw'] = perf_kpi['w-bw']
-                perf_kpi['iops'] = perf_kpi['w-iops']
-                perf_kpi['lat'] = perf_kpi['w-lat']
-            else:
-                raise Exception(
-                    'the bandwidth for both read and write is zero.')
+            perf_kpi['bw'] = perf_kpi['r-bw'] + perf_kpi['w-bw']
+            perf_kpi['iops'] = perf_kpi['r-iops'] + perf_kpi['w-iops']
+            perf_kpi['lat'] = perf_kpi['r-lat'] + perf_kpi['w-lat']
 
         except Exception, err:
             print 'Error while extracting performance KPIs: %s' % err
