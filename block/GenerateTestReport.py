@@ -249,6 +249,14 @@ class FioPerformanceKPIs():
 
         return 0
 
+    def print_table(self, params={}):
+        '''
+        This function print self.table to the console.
+        '''
+
+        print self.table
+        return 0
+
 
 if __name__ == '__main__':
 
@@ -258,10 +266,7 @@ if __name__ == '__main__':
 
     print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
     perf_kpis.build_table()
-    print perf_kpis.table
     perf_kpis.format_table()
-    print perf_kpis.table
-    perf_kpis.format_table({'table_style': 'simple'})
-    print perf_kpis.table
+    perf_kpis.print_table()
 
     exit(0)
