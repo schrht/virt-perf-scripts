@@ -21,6 +21,8 @@ import json
 import re
 import os
 
+from prettytable import PrettyTable
+
 
 class FioPerformanceKPIs():
     '''
@@ -34,6 +36,9 @@ class FioPerformanceKPIs():
     # The list of performance KPIs, which are extracted from the raw data.
     # Each item represents a single fio test and it is in python dict format.
     perf_kpi_list = []
+
+    # The table of performance KPIs, which is powered by PrettyTable.
+    table = None
 
     def file_to_raw(self, params={}):
         '''
@@ -162,6 +167,11 @@ class FioPerformanceKPIs():
                 'mean'] / 1000000.0
             perf_kpi['lat'] = perf_kpi['r-lat'] + perf_kpi['w-lat']
 
+            # Add more items
+            perf_kpi['driver'] = 'n/a'
+            perf_kpi['format'] = 'n/a'
+            perf_kpi['round'] = 'n/a'
+
         except Exception, err:
             print 'Error while extracting performance KPIs: %s' % err
             return (1, None)
@@ -181,6 +191,46 @@ class FioPerformanceKPIs():
 
         return 0
 
+    def build_table(self, params={}):
+        '''
+        This function builds self.table by coverting the data in self.perf_kpi_list.
+        '''
+
+        # Parse required params
+        if 'table_style' not in params:
+            params['table_style'] = 'rich'
+
+        if params['table_style'] not in ('rich', 'simple'):
+            print 'Invalid params: params[table_style]: %s' % params[
+                'table_style']
+            return 1
+
+        try:
+            self.table = PrettyTable([
+                "Driver", "Format", "RW", "BS", "IODepth", "Numjobs", "Round",
+                "BW(MiB/s)", "IOPS", "LAT(ms)", "Util(%)"
+            ])
+
+            for perf_kpi in self.perf_kpi_list:
+                self.table.add_row([
+                    perf_kpi['driver'], perf_kpi['format'], perf_kpi['rw'],
+                    perf_kpi['bs'], perf_kpi['iodepth'], perf_kpi['numjobs'],
+                    perf_kpi['round'], perf_kpi['bw'], perf_kpi['iops'],
+                    perf_kpi['lat'], perf_kpi['util']
+                ])
+
+        except Exception, err:
+            print 'Error while building self.table: %s' % err
+            return 1
+
+        self.table.float_format = '.4'
+
+        if params['table_style'] == 'simple':
+            self.table.border = False
+            self.table.align = 'l'
+
+        return 0
+
 
 if __name__ == '__main__':
 
@@ -189,5 +239,7 @@ if __name__ == '__main__':
     perf_kpis.extracts_perf_kpis()
 
     print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
+    perf_kpis.build_table({'table_style': 'simple'})
+    print perf_kpis.table
 
     exit(0)
