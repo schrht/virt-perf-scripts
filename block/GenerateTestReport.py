@@ -196,15 +196,6 @@ class FioPerformanceKPIs():
         This function builds self.table by coverting the data in self.perf_kpi_list.
         '''
 
-        # Parse required params
-        if 'table_style' not in params:
-            params['table_style'] = 'rich'
-
-        if params['table_style'] not in ('rich', 'simple'):
-            print 'Invalid params: params[table_style]: %s' % params[
-                'table_style']
-            return 1
-
         try:
             self.table = PrettyTable([
                 "Driver", "Format", "RW", "BS", "IODepth", "Numjobs", "Round",
@@ -223,11 +214,38 @@ class FioPerformanceKPIs():
             print 'Error while building self.table: %s' % err
             return 1
 
-        self.table.float_format = '.4'
+        return 0
 
-        if params['table_style'] == 'simple':
-            self.table.border = False
-            self.table.align = 'l'
+    def format_table(self, params={}):
+        '''
+        This function formats self.table so that people can read the outputs conveniently.
+        This function will not effect the data stored in the table.
+        '''
+
+        # Parse required params
+        if 'table_style' in params and params['table_style'] not in ('rich',
+                                                                     'simple'):
+            print 'Invalid params: params[table_style]: %s' % params[
+                'table_style']
+            return 1
+
+        # Change overall settings
+        if 'float_format' in params:
+            self.table.float_format = params['float_format']
+        else:
+            self.table.float_format = '.4'
+
+        # Configure specific columes
+        #self.table.float_format['LAT(ms)'] = '.8'
+
+        # Apply the table style if specified
+        if 'table_style' in params:
+            if params['table_style'] == 'rich':
+                self.table.border = True
+                self.table.align = 'c'
+            if params['table_style'] == 'simple':
+                self.table.border = False
+                self.table.align = 'l'
 
         return 0
 
@@ -239,7 +257,11 @@ if __name__ == '__main__':
     perf_kpis.extracts_perf_kpis()
 
     print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
-    perf_kpis.build_table({'table_style': 'simple'})
+    perf_kpis.build_table()
+    print perf_kpis.table
+    perf_kpis.format_table()
+    print perf_kpis.table
+    perf_kpis.format_table({'table_style': 'simple'})
     print perf_kpis.table
 
     exit(0)
