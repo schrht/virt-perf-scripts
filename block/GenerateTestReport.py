@@ -168,6 +168,7 @@ class FioPerformanceKPIs():
             if len(raw_data['disk_util']) == 1:
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
             else:
+                print 'Error while parsing disk_util: length != 1'
                 perf_kpi['util'] = 'error'
 
             # Add more items
@@ -282,7 +283,7 @@ if __name__ == '__main__':
     perf_kpis.load_raw_data({'result_path': './block/samples'})
     perf_kpis.extracts_perf_kpis()
 
-    print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
+    #print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
     perf_kpis.build_table()
     perf_kpis.print_table()
 
