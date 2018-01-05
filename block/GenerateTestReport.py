@@ -232,10 +232,39 @@ class FioPerformanceKPIs():
 
     def print_table(self, params={}):
         '''
-        This function print self.table to the console.
+        This function makes a copy of self.table, defines the appearance and
+        print it out to the console.
         '''
 
-        print self.table
+        # Parse required params
+        if 'table_style' in params:
+            valid_inputs = ('DEFAULT', 'MSWORD_FRIENDLY', 'PLAIN_COLUMNS',
+                            'plain')
+            if params['table_style'] not in valid_inputs:
+                print 'Invalid params: params[table_style]: "%s", the valid inputs are: %s' % (
+                    params['table_style'], valid_inputs)
+                return 1
+
+        # Make a copy of self.table
+        my_table = self.table[:]
+
+        # Edit the appearance
+        if 'table_style' in params:
+            if params['table_style'] == 'DEFAULT':
+                my_table.set_style(prettytable.DEFAULT)
+            if params['table_style'] == 'MSWORD_FRIENDLY':
+                my_table.set_style(prettytable.MSWORD_FRIENDLY)
+            if params['table_style'] == 'PLAIN_COLUMNS':
+                my_table.set_style(prettytable.PLAIN_COLUMNS)
+            if params['table_style'] == 'plain':
+                my_table.border = False
+                my_table.align = 'l'
+                my_table.left_padding_width = 0
+                my_table.right_padding_width = 2
+
+        # Print the table
+        print my_table
+
         return 0
 
 
