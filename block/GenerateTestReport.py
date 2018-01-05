@@ -195,6 +195,7 @@ class FioPerformanceKPIs():
         This function builds self.table by coverting the data in self.perf_kpi_list.
         '''
 
+        # Build the table from self.perf_kpi_list
         try:
             self.table = prettytable.PrettyTable([
                 "Driver", "Format", "RW", "BS", "IODepth", "Numjobs", "Round",
@@ -213,6 +214,9 @@ class FioPerformanceKPIs():
             print 'Error while building self.table: %s' % err
             return 1
 
+        # Format this table
+        self.format_table()
+
         return 0
 
     def format_table(self, params={}):
@@ -223,7 +227,7 @@ class FioPerformanceKPIs():
         '''
 
         # Edit global settings
-            self.table.float_format = '.4'
+        self.table.float_format = '.4'
 
         # Edit pre-colume settings
         self.table.float_format['LAT(ms)'] = '.4'
@@ -276,7 +280,6 @@ if __name__ == '__main__':
 
     print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
     perf_kpis.build_table()
-    perf_kpis.format_table()
     perf_kpis.print_table()
 
     exit(0)
