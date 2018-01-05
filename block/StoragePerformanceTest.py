@@ -231,7 +231,7 @@ class StoragePerformanceTest:
     def do_fio_run(self):
 
         file_number = 0
-        for m_test_round_item in range(0, self.m_test_round):
+        for m_test_round_item in range(1, self.m_test_round + 1):
             for m_rw_item in self.m_rw:
                 for m_bs_item in self.m_bs:
                     for m_iodepth_item in self.m_iodepth:
