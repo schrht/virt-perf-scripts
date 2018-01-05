@@ -147,8 +147,6 @@ class FioPerformanceKPIs():
             perf_kpi['iodepth'] = raw_data['jobs'][0]['job options']['iodepth']
             perf_kpi['numjobs'] = raw_data['jobs'][0]['job options']['numjobs']
 
-            perf_kpi['util'] = raw_data['disk_util'][0]['aggr_util']
-
             # The unit of "bw" was "KiB/s", convert to "MiB/s"
             perf_kpi['r-bw'] = raw_data['jobs'][0]['read']['bw'] / 1024.0
             perf_kpi['w-bw'] = raw_data['jobs'][0]['write']['bw'] / 1024.0
@@ -165,6 +163,12 @@ class FioPerformanceKPIs():
             perf_kpi['w-lat'] = raw_data['jobs'][0]['write']['lat_ns'][
                 'mean'] / 1000000.0
             perf_kpi['lat'] = perf_kpi['r-lat'] + perf_kpi['w-lat']
+
+            # Get util% of the disk
+            if len(raw_data['disk_util']) == 1:
+                perf_kpi['util'] = raw_data['disk_util'][0]['util']
+            else:
+                perf_kpi['util'] = 'error'
 
             # Add more items
             perf_kpi['driver'] = 'n/a'
