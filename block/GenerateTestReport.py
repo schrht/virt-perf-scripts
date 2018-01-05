@@ -20,8 +20,7 @@
 import json
 import re
 import os
-
-from prettytable import PrettyTable
+import prettytable
 
 
 class FioPerformanceKPIs():
@@ -197,7 +196,7 @@ class FioPerformanceKPIs():
         '''
 
         try:
-            self.table = PrettyTable([
+            self.table = prettytable.PrettyTable([
                 "Driver", "Format", "RW", "BS", "IODepth", "Numjobs", "Round",
                 "BW(MiB/s)", "IOPS", "LAT(ms)", "Util(%)"
             ])
@@ -218,34 +217,16 @@ class FioPerformanceKPIs():
 
     def format_table(self, params={}):
         '''
-        This function formats self.table so that people can read the outputs conveniently.
-        This function will not effect the data stored in the table.
+        This function formats the values in self.table so that people can read
+        the outputs conveniently. And this action will not damage the data
+        inside the table.
         '''
 
-        # Parse required params
-        if 'table_style' in params and params['table_style'] not in ('rich',
-                                                                     'simple'):
-            print 'Invalid params: params[table_style]: %s' % params[
-                'table_style']
-            return 1
-
-        # Change overall settings
-        if 'float_format' in params:
-            self.table.float_format = params['float_format']
-        else:
+        # Edit global settings
             self.table.float_format = '.4'
 
-        # Configure specific columes
-        #self.table.float_format['LAT(ms)'] = '.8'
-
-        # Apply the table style if specified
-        if 'table_style' in params:
-            if params['table_style'] == 'rich':
-                self.table.border = True
-                self.table.align = 'c'
-            if params['table_style'] == 'simple':
-                self.table.border = False
-                self.table.align = 'l'
+        # Edit pre-colume settings
+        self.table.float_format['LAT(ms)'] = '.4'
 
         return 0
 
