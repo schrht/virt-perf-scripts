@@ -1,13 +1,5 @@
 #!/usr/bin/env python
 
-# What to do next?
-# - make a cpu of office and enjoy it.
-# - make fio generates the results in normal and json+.
-# - get the json parts from the output files.
-# - analyse it and keep KPIs in python dict.
-# - load the dicts into PrettyTalbe.
-# - show it or export as csv files.
-
 # Interface between StoragePerformanceTest.py
 # StoragePerformanceTest.py should do:
 # 1. the fio outputs should be at least in json+ format
@@ -16,6 +8,10 @@
 # 3. put all *.fiolog files into ./fio_result/
 # 4. empty ./fio_report/ folder
 # 5. pass the additional information by "fio --description"
+#    a) "driver" - frontend driver, such as SCSI or IDE
+#    b) "format" - the disk format, such as raw or xfs
+#    c) "round" - the round number, such as 1, 2, 3...
+#    d) "backend" - the hardware which data image based on
 
 import json
 import re
@@ -171,10 +167,21 @@ class FioPerformanceKPIs():
                 print 'Error while parsing disk_util: length != 1'
                 perf_kpi['util'] = 'error'
 
-            # Add more items
-            perf_kpi['driver'] = 'n/a'
-            perf_kpi['format'] = 'n/a'
-            perf_kpi['round'] = 'n/a'
+            # Get additional information
+            try:
+                dict = eval(raw_data['jobs'][0]['job options']['description'])
+                perf_kpi.update(dict)
+            except Exception, err:
+                print 'Error while parsing additional information: %s' % err
+
+            if 'driver' not in perf_kpi:
+                perf_kpi['driver'] = 'n/a'
+            if 'format' not in perf_kpi:
+                perf_kpi['format'] = 'n/a'
+            if 'round' not in perf_kpi:
+                perf_kpi['round'] = 'n/a'
+            if 'backend' not in perf_kpi:
+                perf_kpi['backend'] = 'n/a'
 
         except Exception, err:
             print 'Error while extracting performance KPIs: %s' % err
@@ -203,14 +210,15 @@ class FioPerformanceKPIs():
         # Build the table from self.perf_kpi_list
         try:
             self.table = prettytable.PrettyTable([
-                "Driver", "Format", "RW", "BS", "IODepth", "Numjobs", "Round",
-                "BW(MiB/s)", "IOPS", "LAT(ms)", "Util(%)"
+                "Backend", "Driver", "Format", "RW", "BS", "IODepth",
+                "Numjobs", "Round", "BW(MiB/s)", "IOPS", "LAT(ms)", "Util(%)"
             ])
 
             for perf_kpi in self.perf_kpi_list:
                 self.table.add_row([
-                    perf_kpi['driver'], perf_kpi['format'], perf_kpi['rw'],
-                    perf_kpi['bs'], perf_kpi['iodepth'], perf_kpi['numjobs'],
+                    perf_kpi['backend'], perf_kpi['driver'],
+                    perf_kpi['format'], perf_kpi['rw'], perf_kpi['bs'],
+                    perf_kpi['iodepth'], perf_kpi['numjobs'],
                     perf_kpi['round'], perf_kpi['bw'], perf_kpi['iops'],
                     perf_kpi['lat'], perf_kpi['util']
                 ])
