@@ -284,6 +284,54 @@ class FioPerformanceKPIs():
 
         return 0
 
+    def dump_table(self, params={}):
+        '''
+        This function makes a copy of self.table and dump the data into a csv
+        file.
+        '''
+
+        # Parse required params
+        if 'report_path' not in params:
+            print 'Missing required params: params[report_path]'
+            return 1
+
+        if 'file_name' not in params:
+            print 'Missing required params: params[file_name]'
+            return 1
+
+        # Make a copy of self.table
+        my_table = self.table[:]
+
+        # Edit the appearance and get the string content
+        my_table.set_style(prettytable.PLAIN_COLUMNS)
+        content = my_table.get_string()
+
+        # Convert the content to csv format
+        try:
+            reObj = re.compile('  +')
+            content = str(reObj.sub(',', content))
+            content = content.replace(',\n', '\n')
+            content = content.replace('\n,', '\n')
+            content = content.strip(',')
+
+        except Exception, err:
+            print 'Error while converting to csv format: %s' % err
+            return 1
+
+        # Write the content to a csv file
+        try:
+            csv_file = params['report_path'] + '/' + params['file_name']
+            print 'Dumping data into csv file "%s"...' % csv_file
+            with open(csv_file, 'w') as f:
+                f.write(content)
+            print 'Finished!'
+
+        except Exception, err:
+            print 'Error while dumping to csv file: %s' % err
+            return 1
+
+        return 0
+
 
 if __name__ == '__main__':
 
@@ -294,5 +342,9 @@ if __name__ == '__main__':
     #print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
     perf_kpis.build_table()
     perf_kpis.print_table()
+    perf_kpis.dump_table({
+        'report_path': './block/samples',
+        'file_name': 'report.csv'
+    })
 
     exit(0)
