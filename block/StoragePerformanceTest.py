@@ -124,7 +124,8 @@ class StoragePerformanceTest:
             "-disk_type",
             type=str,
             dest='m_disk_type',
-            help="set the disk type, fc_raw,fc_fs,scsi_raw,scsi_fs,ide_raw,ide_fs,ssd",
+            help=
+            "set the disk type, fc_raw,fc_fs,scsi_raw,scsi_fs,ide_raw,ide_fs,ssd",
             required=False)
         parser.add_argument(
             "-runtime",
@@ -252,9 +253,34 @@ class StoragePerformanceTest:
                             if not os.path.exists(self.m_dir_result):
                                 os.mkdir(self.m_dir_result)
 
-                            # TODO: implement this interface in the future if needed.
-                            description = 'N/A'
+                            # Set additional information
+                            try:
+                                info = {}
+                                info['backend'] = 'nvme-ssd'
+                                info['round'] = str(m_test_round_item)
+                                info['driver'] = m_disk_filename_dic_key.split(
+                                    '_')[0]
+                                if m_disk_filename_dic_key.split('_')[
+                                        1] == 'fs':
+                                    info['format'] = self.m_fs_type
+                                else:
+                                    info['format'] = 'raw'
 
+                            except Exception, err:
+                                print 'Error while setting additional information: %s' % err
+
+                            if 'backend' not in info:
+                                info['backend'] = 'n/a'
+                            if 'round' not in info:
+                                info['round'] = 'n/a'
+                            if 'driver' not in info:
+                                info['driver'] = 'n/a'
+                            if 'format' not in info:
+                                info['format'] = 'n/a'
+
+                            description = str(info)
+
+                            # Execute command
                             command = 'fio --filename=%s --name=%s --ioengine=libaio --iodepth=%s --rw=%s \
                             --bs=%s --direct=%s --size=512M --numjobs=%s --group_reporting --time_based --runtime=%s \
                             --output-format=normal,json+ --output=%s --description="%s"' % (
