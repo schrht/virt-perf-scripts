@@ -209,13 +209,15 @@ class StoragePerformanceTest:
 
             elif self.m_gen_type == 'gen1':
                 self.m_disk_filename_dic = {
-                    'IDE_fs': '/home/tmp',
+                    'IDE_fs': '/mnt1/tmp',
                     'IDE_raw': '/dev/sdb',
-                    'SCSI_fs': '/mnt/tmp',
+                    'SCSI_fs': '/mnt2/tmp',
                     'SCSI_raw': '/dev/sdd'
                 }
-                if not os.path.exists('/home/tmp'):
-                    os.system('touch /home/tmp')
+                if not os.path.exists('/mnt1/tmp'):
+                    os.system('touch /mnt1/tmp')
+                if not os.path.exists('/mnt2/tmp'):
+                    os.system('touch /mnt2/tmp')
             # TODO, check /dev/sdc mounted to /mnt
         else:
             temp_disk_type = 0
