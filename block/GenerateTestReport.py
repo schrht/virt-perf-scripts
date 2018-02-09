@@ -336,14 +336,14 @@ class FioPerformanceKPIs():
 if __name__ == '__main__':
 
     perf_kpis = FioPerformanceKPIs()
-    perf_kpis.load_raw_data({'result_path': './block/samples'})
+    perf_kpis.load_raw_data({'result_path': './fio_result/'})
     perf_kpis.extracts_perf_kpis()
 
     #print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
     perf_kpis.build_table()
     perf_kpis.print_table()
     perf_kpis.dump_table({
-        'report_path': './block/samples',
+        'report_path': './fio_report/',
         'file_name': 'report.csv'
     })
 
