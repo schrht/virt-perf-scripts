@@ -25,12 +25,12 @@ class FioBenchmarkReporter():
 
         # Read from CSV files
         self.df_s1 = pd.read_csv(
-            "/home/cheshi/workspace/vsc_workspace/virt-perf-scripts/fio_report/RHEL74_report.csv"
+            "./fio_report/RHEL74_report.csv"
         )
         print self.df_s1
 
         self.df_s2 = pd.read_csv(
-            "/home/cheshi/workspace/vsc_workspace/virt-perf-scripts/fio_report/RHEL75_report.csv"
+            "./fio_report/RHEL75_report.csv"
         )
         print self.df_s2
 
