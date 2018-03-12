@@ -44,30 +44,30 @@ class FioBenchmarkReporter():
         # Add new columns to the DataFrame
         # [Notes] The units: BW(MiB/s) / IOPS / LAT(ms) / Util(%)
         self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-BW', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-BW', 0)
         self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-BW', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-BW', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-BW', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-BW', 0)
 
         self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-IOPS', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-IOPS', 0)
         self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-IOPS', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-IOPS', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-IOPS', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-IOPS', 0)
 
         self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-LAT', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-LAT', 0)
         self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-LAT', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-LAT', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-LAT', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-LAT', 0)
 
         self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-Util', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-Util', 0)
         self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-Util', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-Util', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-Util', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-Util', 0)
 
@@ -95,9 +95,11 @@ class FioBenchmarkReporter():
             print df_test
 
             series['BASE-AVG-BW'] = df_base['BW(MiB/s)'].mean()
-            series['BASE-STD-BW'] = df_base['BW(MiB/s)'].std()
+            series['BASE-%SD-BW'] = df_base['BW(MiB/s)'].std(
+                ddof=1) / series['BASE-AVG-BW'] * 100
             series['TEST-AVG-BW'] = df_test['BW(MiB/s)'].mean()
-            series['TEST-STD-BW'] = df_test['BW(MiB/s)'].std()
+            series['TEST-%SD-BW'] = df_test['BW(MiB/s)'].std(
+                ddof=1) / series['TEST-AVG-BW'] * 100
             series['%DIFF-BW'] = (series['TEST-AVG-BW'] - series['BASE-AVG-BW']
                                   ) / series['BASE-AVG-BW'] * 100
             series['SIGNI-BW'] = 0.99
