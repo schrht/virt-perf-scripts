@@ -15,7 +15,7 @@ class FioBenchmarkReporter():
     '''
 
     # The DataFrame for set 1 and set 2, which are powered by pandas.
-    df_s1 = df_s2 = None
+    df_base = df_test = None
 
     # The DataFrame for target data which used for reporting.
     df_report = None
@@ -24,14 +24,14 @@ class FioBenchmarkReporter():
         pass
 
         # Read from CSV files
-        self.df_s1 = pd.read_csv("./fio_report/RHEL74_report.csv")
-        print self.df_s1
+        self.df_base = pd.read_csv("./fio_report/RHEL74_report.csv")
+        print self.df_base
 
-        self.df_s2 = pd.read_csv("./fio_report/RHEL75_report.csv")
-        print self.df_s2
+        self.df_test = pd.read_csv("./fio_report/RHEL75_report.csv")
+        print self.df_test
 
         # Create the DataFrame for reporting
-        self.df_report = self.df_s2[[
+        self.df_report = self.df_test[[
             'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
         ]].drop_duplicates()
 
@@ -43,61 +43,63 @@ class FioBenchmarkReporter():
 
         # Add new columns to the DataFrame
         # [Notes] The units: BW(MiB/s) / IOPS / LAT(ms) / Util(%)
-        self.df_report.insert(len(self.df_report.columns), 'S1-AVG-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S1-STD-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-AVG-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-STD-BW', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-BW', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-BW', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-BW', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-BW', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-BW', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-BW', 0)
 
-        self.df_report.insert(len(self.df_report.columns), 'S1-AVG-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S1-STD-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-AVG-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-STD-IOPS', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-IOPS', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-IOPS', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-IOPS', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-IOPS', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-IOPS', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-IOPS', 0)
 
-        self.df_report.insert(len(self.df_report.columns), 'S1-AVG-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S1-STD-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-AVG-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-STD-LAT', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-LAT', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-LAT', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-LAT', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-LAT', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-LAT', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-LAT', 0)
 
-        self.df_report.insert(len(self.df_report.columns), 'S1-AVG-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S1-STD-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-AVG-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'S2-STD-Util', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-Util', 0)
+        self.df_report.insert(len(self.df_report.columns), 'BASE-STD-Util', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-Util', 0)
+        self.df_report.insert(len(self.df_report.columns), 'TEST-STD-Util', 0)
         self.df_report.insert(len(self.df_report.columns), '%DIFF-Util', 0)
         self.df_report.insert(len(self.df_report.columns), 'SIGNI-Util', 0)
 
         #print self.df_report
 
         for (index, series) in self.df_report.iterrows():
-            df_s1 = self.df_s1[(self.df_s1['Backend'] == series['Backend'])
-                               & (self.df_s1['Driver'] == series['Driver'])
-                               & (self.df_s1['Format'] == series['Format'])
-                               & (self.df_s1['RW'] == series['RW'])
-                               & (self.df_s1['BS'] == series['BS'])
-                               & (self.df_s1['IODepth'] == series['IODepth'])
-                               & (self.df_s1['Numjobs'] == series['Numjobs'])]
+            df_base = self.df_base[
+                (self.df_base['Backend'] == series['Backend'])
+                & (self.df_base['Driver'] == series['Driver'])
+                & (self.df_base['Format'] == series['Format'])
+                & (self.df_base['RW'] == series['RW'])
+                & (self.df_base['BS'] == series['BS'])
+                & (self.df_base['IODepth'] == series['IODepth'])
+                & (self.df_base['Numjobs'] == series['Numjobs'])]
 
-            df_s2 = self.df_s2[(self.df_s2['Backend'] == series['Backend'])
-                               & (self.df_s2['Driver'] == series['Driver'])
-                               & (self.df_s2['Format'] == series['Format'])
-                               & (self.df_s2['RW'] == series['RW'])
-                               & (self.df_s2['BS'] == series['BS'])
-                               & (self.df_s2['IODepth'] == series['IODepth'])
-                               & (self.df_s2['Numjobs'] == series['Numjobs'])]
-            print df_s1
-            print df_s2
+            df_test = self.df_test[
+                (self.df_test['Backend'] == series['Backend'])
+                & (self.df_test['Driver'] == series['Driver'])
+                & (self.df_test['Format'] == series['Format'])
+                & (self.df_test['RW'] == series['RW'])
+                & (self.df_test['BS'] == series['BS'])
+                & (self.df_test['IODepth'] == series['IODepth'])
+                & (self.df_test['Numjobs'] == series['Numjobs'])]
+            print df_base
+            print df_test
 
-            series['S1-AVG-BW'] = df_s1['BW(MiB/s)'].mean()
-            series['S1-STD-BW'] = df_s1['BW(MiB/s)'].std()
-            series['S2-AVG-BW'] = df_s2['BW(MiB/s)'].mean()
-            series['S2-STD-BW'] = df_s2['BW(MiB/s)'].std()
-            series['%DIFF-BW'] = (series['S2-AVG-BW'] - series['S1-AVG-BW']
-                                  ) / series['S1-AVG-BW'] * 100
+            series['BASE-AVG-BW'] = df_base['BW(MiB/s)'].mean()
+            series['BASE-STD-BW'] = df_base['BW(MiB/s)'].std()
+            series['TEST-AVG-BW'] = df_test['BW(MiB/s)'].mean()
+            series['TEST-STD-BW'] = df_test['BW(MiB/s)'].std()
+            series['%DIFF-BW'] = (series['TEST-AVG-BW'] - series['BASE-AVG-BW']
+                                  ) / series['BASE-AVG-BW'] * 100
             series['SIGNI-BW'] = 0.99
 
             print series
