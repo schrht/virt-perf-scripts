@@ -166,14 +166,28 @@ class FioBenchmarkReporter():
 
             self.df_report.iloc[index] = series
 
-            #print self.df_report
+        print self.df_report
 
-            break
+        return 0
+
+    def dump_to_csv(self, csv_file):
+        # Write the content to a csv file
+        try:
+            print 'Dumping data into csv file "%s"...' % csv_file
+            content = self.df_report.to_csv()
+            with open(csv_file, 'w') as f:
+                f.write(content)
+            print 'Finished!'
+
+        except Exception, err:
+            print 'Error while dumping to csv file: %s' % err
+            return 1
 
 
 if __name__ == '__main__':
 
     fbr = FioBenchmarkReporter()
     fbr.test()
+    fbr.dump_to_csv('./fio_report/benchmark_report.csv')
 
     exit(0)
