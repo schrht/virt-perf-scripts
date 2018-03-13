@@ -20,6 +20,22 @@ class FioBenchmarkReporter():
     # The DataFrame for target data which used for reporting.
     df_report = None
 
+    def _get_significance(self, array1, array2, paired=False):
+        '''
+        This function used to get the significance of t-test.
+        '''
+        from scipy.stats import ttest_rel
+        from scipy.stats import ttest_ind
+
+        if paired:
+            (statistic, pvalue) = ttest_rel(array1, array2)
+        else:
+            (statistic, pvalue) = ttest_ind(array1, array2)
+
+        significance = 1 - pvalue
+
+        return significance
+
     def test(self, params={}):
         pass
 
@@ -102,7 +118,8 @@ class FioBenchmarkReporter():
                 ddof=1) / series['TEST-AVG-BW'] * 100
             series['%DIFF-BW'] = (series['TEST-AVG-BW'] - series['BASE-AVG-BW']
                                   ) / series['BASE-AVG-BW'] * 100
-            series['SIGNI-BW'] = 0.99
+            series['SIGNI-BW'] = self._get_significance(
+                df_base['BW(MiB/s)'], df_test['BW(MiB/s)'])
 
             print series
 
