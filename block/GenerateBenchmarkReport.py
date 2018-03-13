@@ -68,8 +68,43 @@ class FioBenchmarkReporter():
             else:
                 return 'Slightly Regression'
 
+    def _add_columns_into_report_dataframe(self, label):
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-BASE-AVG', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-BASE-%SD', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-TEST-AVG', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-TEST-%SD', 0)
+        self.df_report.insert(len(self.df_report.columns), label + '-%DIFF', 0)
+        self.df_report.insert(len(self.df_report.columns), label + '-SIGNI', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-CONCLUSION', 0)
+        return 0
+
+    def _calculate_and_fill_report_dataframe(self, series, df_base, df_test,
+                                             label, source_label,
+                                             higher_is_better):
+        series[label + '-BASE-AVG'] = df_base[source_label].mean()
+        series[label + '-BASE-%SD'] = df_base[source_label].std(
+            ddof=1) / series[label + '-BASE-AVG'] * 100
+        series[label + '-TEST-AVG'] = df_test[source_label].mean()
+        series[label + '-TEST-%SD'] = df_test[source_label].std(
+            ddof=1) / series[label + '-TEST-AVG'] * 100
+        series[label + '-%DIFF'] = (
+            series[label + '-TEST-AVG'] - series[label + '-BASE-AVG']
+        ) / series[label + '-BASE-AVG'] * 100
+        series[label + '-SIGNI'] = self._get_significance(
+            df_base[source_label], df_test[source_label])
+        series[label + '-CONCLUSION'] = self._get_conclusion(
+            series[label + '-BASE-%SD'], series[label + '-TEST-%SD'],
+            series[label + '-%DIFF'], series[label
+                                             + '-SIGNI'], higher_is_better)
+
+        return 0
+
     def test(self, params={}):
-        pass
 
         # Read from CSV files
         self.df_base = pd.read_csv("./fio_report/RHEL74_report.csv")
@@ -91,39 +126,10 @@ class FioBenchmarkReporter():
 
         # Add new columns to the DataFrame
         # [Notes] The units: BW(MiB/s) / IOPS / LAT(ms) / Util(%)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), '%DIFF-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'SIGNI-BW', 0)
-        self.df_report.insert(len(self.df_report.columns), 'CONCLUSION-BW', 0)
-
-        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), '%DIFF-IOPS', 0)
-        self.df_report.insert(len(self.df_report.columns), 'SIGNI-IOPS', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), 'CONCLUSION-IOPS', 0)
-
-        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), '%DIFF-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'SIGNI-LAT', 0)
-        self.df_report.insert(len(self.df_report.columns), 'CONCLUSION-LAT', 0)
-
-        self.df_report.insert(len(self.df_report.columns), 'BASE-AVG-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'BASE-%SD-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-AVG-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'TEST-%SD-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), '%DIFF-Util', 0)
-        self.df_report.insert(len(self.df_report.columns), 'SIGNI-Util', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), 'CONCLUSION-Util', 0)
+        self._add_columns_into_report_dataframe('BW')
+        self._add_columns_into_report_dataframe('IOPS')
+        self._add_columns_into_report_dataframe('LAT')
+        self._add_columns_into_report_dataframe('Util')
 
         #print self.df_report
 
@@ -146,65 +152,15 @@ class FioBenchmarkReporter():
                 & (self.df_test['IODepth'] == series['IODepth'])
                 & (self.df_test['Numjobs'] == series['Numjobs'])]
 
-            # Caluclate statistic index
-            series['BASE-AVG-BW'] = df_base['BW(MiB/s)'].mean()
-            series['BASE-%SD-BW'] = df_base['BW(MiB/s)'].std(
-                ddof=1) / series['BASE-AVG-BW'] * 100
-            series['TEST-AVG-BW'] = df_test['BW(MiB/s)'].mean()
-            series['TEST-%SD-BW'] = df_test['BW(MiB/s)'].std(
-                ddof=1) / series['TEST-AVG-BW'] * 100
-            series['%DIFF-BW'] = (series['TEST-AVG-BW'] - series['BASE-AVG-BW']
-                                  ) / series['BASE-AVG-BW'] * 100
-            series['SIGNI-BW'] = self._get_significance(
-                df_base['BW(MiB/s)'], df_test['BW(MiB/s)'])
-            series['CONCLUSION-BW'] = self._get_conclusion(
-                series['BASE-%SD-BW'], series['TEST-%SD-BW'],
-                series['%DIFF-BW'], series['SIGNI-BW'], True)
-
-            series['BASE-AVG-IOPS'] = df_base['IOPS'].mean()
-            series['BASE-%SD-IOPS'] = df_base['IOPS'].std(
-                ddof=1) / series['BASE-AVG-IOPS'] * 100
-            series['TEST-AVG-IOPS'] = df_test['IOPS'].mean()
-            series['TEST-%SD-IOPS'] = df_test['IOPS'].std(
-                ddof=1) / series['TEST-AVG-IOPS'] * 100
-            series['%DIFF-IOPS'] = (
-                series['TEST-AVG-IOPS'] - series['BASE-AVG-IOPS']
-            ) / series['BASE-AVG-IOPS'] * 100
-            series['SIGNI-IOPS'] = self._get_significance(
-                df_base['IOPS'], df_test['IOPS'])
-            series['CONCLUSION-IOPS'] = self._get_conclusion(
-                series['BASE-%SD-IOPS'], series['TEST-%SD-IOPS'],
-                series['%DIFF-IOPS'], series['SIGNI-IOPS'], True)
-
-            series['BASE-AVG-LAT'] = df_base['LAT(ms)'].mean()
-            series['BASE-%SD-LAT'] = df_base['LAT(ms)'].std(
-                ddof=1) / series['BASE-AVG-LAT'] * 100
-            series['TEST-AVG-LAT'] = df_test['LAT(ms)'].mean()
-            series['TEST-%SD-LAT'] = df_test['LAT(ms)'].std(
-                ddof=1) / series['TEST-AVG-LAT'] * 100
-            series['%DIFF-LAT'] = (
-                series['TEST-AVG-LAT'] - series['BASE-AVG-LAT']
-            ) / series['BASE-AVG-LAT'] * 100
-            series['SIGNI-LAT'] = self._get_significance(
-                df_base['LAT(ms)'], df_test['LAT(ms)'])
-            series['CONCLUSION-LAT'] = self._get_conclusion(
-                series['BASE-%SD-LAT'], series['TEST-%SD-LAT'],
-                series['%DIFF-LAT'], series['SIGNI-LAT'], False)
-
-            series['BASE-AVG-Util'] = df_base['Util(%)'].mean()
-            series['BASE-%SD-Util'] = df_base['Util(%)'].std(
-                ddof=1) / series['BASE-AVG-Util'] * 100
-            series['TEST-AVG-Util'] = df_test['Util(%)'].mean()
-            series['TEST-%SD-Util'] = df_test['Util(%)'].std(
-                ddof=1) / series['TEST-AVG-Util'] * 100
-            series['%DIFF-Util'] = (
-                series['TEST-AVG-Util'] - series['BASE-AVG-Util']
-            ) / series['BASE-AVG-Util'] * 100
-            series['SIGNI-Util'] = self._get_significance(
-                df_base['Util(%)'], df_test['Util(%)'])
-            series['CONCLUSION-Util'] = self._get_conclusion(
-                series['BASE-%SD-Util'], series['TEST-%SD-Util'],
-                series['%DIFF-Util'], series['SIGNI-Util'], True)
+            # Calculate statistic index
+            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
+                                                      'BW', 'BW(MiB/s)', True)
+            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
+                                                      'IOPS', 'IOPS', True)
+            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
+                                                      'LAT', 'LAT(ms)', False)
+            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
+                                                      'Util', 'Util(%)', True)
 
             print series
 
