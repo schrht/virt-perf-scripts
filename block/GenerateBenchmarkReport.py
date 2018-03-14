@@ -106,15 +106,34 @@ class FioBenchmarkReporter():
 
         return 0
 
-    def test(self, params={}):
+    def load_samples(self, params={}):
+        # Parse required params
+        if 'base_csv' not in params:
+            print 'Missing required params: params[base_csv]'
+            return 1
 
-        # Read from CSV files
-        self.df_base = pd.read_csv("./fio_report/RHEL74_report.csv")
-        print self.df_base
+        if 'test_csv' not in params:
+            print 'Missing required params: params[test_csv]'
+            return 1
 
-        self.df_test = pd.read_csv("./fio_report/RHEL75_report.csv")
-        print self.df_test
+        try:
+            # Load base samples from CSV file
+            print 'Reading base samples from csv file "%s"...' % params[
+                'base_csv']
+            self.df_base = pd.read_csv(params['base_csv'])
 
+            # Load test samples from CSV file
+            print 'Reading test samples from csv file "%s"...' % params[
+                'test_csv']
+            self.df_test = pd.read_csv(params['test_csv'])
+
+        except Exception, err:
+            print 'Error while reading from csv file: %s' % err
+            return 1
+
+        return 0
+
+    def _create_report_dataframe(self):
         # Create the DataFrame for reporting
         self.df_report = self.df_test[[
             'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
@@ -133,10 +152,15 @@ class FioBenchmarkReporter():
         self._add_columns_into_report_dataframe('LAT')
         self._add_columns_into_report_dataframe('Util')
 
-        #print self.df_report
+        return 0
 
+    def _complete_report_dataframe(self):
         for (index, series) in self.df_report.iterrows():
-            df_base = self.df_base[
+
+            if index > 5:
+                continue
+
+            my_sub_base = self.df_base[
                 (self.df_base['Backend'] == series['Backend'])
                 & (self.df_base['Driver'] == series['Driver'])
                 & (self.df_base['Format'] == series['Format'])
@@ -145,7 +169,7 @@ class FioBenchmarkReporter():
                 & (self.df_base['IODepth'] == series['IODepth'])
                 & (self.df_base['Numjobs'] == series['Numjobs'])]
 
-            df_test = self.df_test[
+            my_sub_test = self.df_test[
                 (self.df_test['Backend'] == series['Backend'])
                 & (self.df_test['Driver'] == series['Driver'])
                 & (self.df_test['Format'] == series['Format'])
@@ -155,21 +179,33 @@ class FioBenchmarkReporter():
                 & (self.df_test['Numjobs'] == series['Numjobs'])]
 
             # Calculate statistic index
-            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
-                                                      'BW', 'BW(MiB/s)', True)
-            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
-                                                      'IOPS', 'IOPS', True)
-            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
-                                                      'LAT', 'LAT(ms)', False)
-            self._calculate_and_fill_report_dataframe(series, df_base, df_test,
-                                                      'Util', 'Util(%)', True)
+            self._calculate_and_fill_report_series(
+                series, my_sub_base, my_sub_test, 'BW', 'BW(MiB/s)', True)
+            self._calculate_and_fill_report_series(
+                series, my_sub_base, my_sub_test, 'IOPS', 'IOPS', True)
+            self._calculate_and_fill_report_series(
+                series, my_sub_base, my_sub_test, 'LAT', 'LAT(ms)', False)
+            self._calculate_and_fill_report_series(
+                series, my_sub_base, my_sub_test, 'Util', 'Util(%)', True)
 
+            # Show current series
             print series
 
+            # Save the changes
             self.df_report.iloc[index] = series
 
+        return 0
+
+    def generate_report(self, params={}):
+
+        # Create report DataFrame
+        self._create_report_dataframe()
+
+        # Complete report DataFrame
+        self._complete_report_dataframe()
+
+        # Format report DataFrame
         self._format_report_dataframe()
-        print self.df_report
 
         return 0
 
@@ -195,7 +231,17 @@ class FioBenchmarkReporter():
 if __name__ == '__main__':
 
     fbr = FioBenchmarkReporter()
-    fbr.test()
-    fbr.dump_to_csv('./fio_report/benchmark_report.csv')
+
+    fbr.load_samples({
+        'base_csv': './fio_report/RHEL74_report.csv',
+        'test_csv': './fio_report/RHEL75_report.csv'
+    })
+
+    fbr.generate_report()
+
+    #fbr.load_samples()
+    print fbr.df_report
+
+    fbr.report_to_csv('./fio_report/benchmark_report.csv')
 
     exit(0)
