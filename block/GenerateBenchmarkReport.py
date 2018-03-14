@@ -176,6 +176,7 @@ class FioBenchmarkReporter():
 
     def _format_report_dataframe(self):
         self.df_report = self.df_report.round(4)
+        self.df_report = self.df_report.fillna('N/A')
         return 0
 
     def dump_to_csv(self, csv_file):
