@@ -53,6 +53,9 @@ class FioBenchmarkReporter():
         if base_pct_dev > MAX_PCT_DEV or test_pct_dev > MAX_PCT_DEV:
             return 'Variance Too Large'
 
+        if pct_diff == 0:
+            return 'No Difference'
+
         if significance < CONFIDENCE_THRESHOLD:
             return 'No Significance'
 
