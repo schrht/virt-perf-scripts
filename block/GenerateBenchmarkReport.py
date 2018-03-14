@@ -214,12 +214,18 @@ class FioBenchmarkReporter():
         self.df_report = self.df_report.fillna('N/A')
         return 0
 
-    def dump_to_csv(self, csv_file):
+    def report_to_csv(self, params={}):
+
+        # Parse required params
+        if 'report_csv' not in params:
+            print 'Missing required params: params[report_csv]'
+            return 1
+
         # Write the content to a csv file
         try:
-            print 'Dumping data into csv file "%s"...' % csv_file
+            print 'Dumping data into csv file "%s"...' % params['report_csv']
             content = self.df_report.to_csv()
-            with open(csv_file, 'w') as f:
+            with open(params['report_csv'], 'w') as f:
                 f.write(content)
             print 'Finished!'
 
@@ -242,6 +248,6 @@ if __name__ == '__main__':
     #fbr.load_samples()
     print fbr.df_report
 
-    fbr.report_to_csv('./fio_report/benchmark_report.csv')
+    fbr.report_to_csv({'report_csv': './fio_report/benchmark_report.csv'})
 
     exit(0)
