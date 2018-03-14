@@ -85,7 +85,7 @@ class FioBenchmarkReporter():
             len(self.df_report.columns), label + '-CONCLUSION', 0)
         return 0
 
-    def _calculate_and_fill_report_dataframe(self, series, df_base, df_test,
+    def _calculate_and_fill_report_series(self, series, df_base, df_test,
                                              label, source_label,
                                              higher_is_better):
         series[label + '-BASE-AVG'] = df_base[source_label].mean()
