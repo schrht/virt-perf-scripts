@@ -169,8 +169,13 @@ class FioBenchmarkReporter():
 
             self.df_report.iloc[index] = series
 
+        self._format_report_dataframe()
         print self.df_report
 
+        return 0
+
+    def _format_report_dataframe(self):
+        self.df_report = self.df_report.round(4)
         return 0
 
     def dump_to_csv(self, csv_file):
