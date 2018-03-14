@@ -7,7 +7,8 @@
 #import os
 #import prettytable
 import pandas as pd
-
+from scipy.stats import ttest_rel
+from scipy.stats import ttest_ind
 
 class FioBenchmarkReporter():
     '''
@@ -24,8 +25,6 @@ class FioBenchmarkReporter():
         '''
         This function used to get the significance of t-test.
         '''
-        from scipy.stats import ttest_rel
-        from scipy.stats import ttest_ind
 
         if paired:
             (statistic, pvalue) = ttest_rel(array1, array2)
@@ -81,7 +80,7 @@ class FioBenchmarkReporter():
         self.df_report.insert(
             len(self.df_report.columns), label + '-TEST-%SD', 0)
         self.df_report.insert(len(self.df_report.columns), label + '-%DIFF', 0)
-        self.df_report.insert(len(self.df_report.columns), label + '-SIGNI', 0)
+        self.df_report.insert(len(self.df_report.columns), label + '-SIGN', 0)
         self.df_report.insert(
             len(self.df_report.columns), label + '-CONCLUSION', 0)
         return 0
@@ -98,12 +97,12 @@ class FioBenchmarkReporter():
         series[label + '-%DIFF'] = (
             series[label + '-TEST-AVG'] - series[label + '-BASE-AVG']
         ) / series[label + '-BASE-AVG'] * 100
-        series[label + '-SIGNI'] = self._get_significance(
+        series[label + '-SIGN'] = self._get_significance(
             df_base[source_label], df_test[source_label])
         series[label + '-CONCLUSION'] = self._get_conclusion(
             series[label + '-BASE-%SD'], series[label + '-TEST-%SD'],
             series[label + '-%DIFF'], series[label
-                                             + '-SIGNI'], higher_is_better)
+                                             + '-SIGN'], higher_is_better)
 
         return 0
 
