@@ -19,6 +19,25 @@
             ]
         },
         {
+            "name": "Python: GenerateBenchmarkReport.py",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": true,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+            "debugOptions": [
+                "RedirectOutput"
+            ],
+            "args": [
+                "./fio_report/RHEL74_report.csv",
+                "./fio_report/RHEL75_report.csv",
+                "./fio_report/benchmark_report.csv"
+            ]
+        },
+        {
             "name": "Python: Attach",
             "type": "python",
             "request": "attach",

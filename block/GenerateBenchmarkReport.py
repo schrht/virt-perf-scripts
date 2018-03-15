@@ -2,6 +2,7 @@
 
 """Generate FIO Benchmark Report."""
 
+import click
 import pandas as pd
 from scipy.stats import ttest_rel
 from scipy.stats import ttest_ind
@@ -338,19 +339,27 @@ class FioBenchmarkReporter():
         return 0
 
 
-if __name__ == '__main__':
-
+@click.command()
+@click.argument('base_csv')
+@click.argument('test_csv')
+@click.argument('report_csv')
+def generate_fio_benchmark_report(base_csv, test_csv, report_csv):
+    """Generate FIO benchmark report."""
     fbr = FioBenchmarkReporter()
 
-    fbr.load_samples({
-        'base_csv': './fio_report/RHEL74_report.csv',
-        'test_csv': './fio_report/RHEL75_report.csv'
-    })
+    ret = fbr.load_samples({'base_csv': base_csv, 'test_csv': test_csv})
+    if ret != 0:
+        exit(1)
 
     fbr.generate_report()
 
-    print fbr.df_report
-
-    fbr.report_to_csv({'report_csv': './fio_report/benchmark_report.csv'})
+    ret = fbr.report_to_csv({'report_csv': report_csv})
+    if ret != 0:
+        exit(1)
 
     exit(0)
+
+
+if __name__ == '__main__':
+
+    generate_fio_benchmark_report()
