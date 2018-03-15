@@ -103,3 +103,4 @@ ENV/
 # user defined
 *.fiolog.json
 
+block/samples/benchmark_report.csv
