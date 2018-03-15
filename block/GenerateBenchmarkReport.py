@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Generate FIO Benchmark Report."""
 
 import click
@@ -153,7 +152,7 @@ class FioBenchmarkReporter():
             series[label + '-%DIFF'], series[label
                                              + '-SIGN'], higher_is_better)
 
-        return 0
+        return None
 
     def load_samples(self, params={}):
         """Load the base and test samples.
@@ -223,16 +222,12 @@ class FioBenchmarkReporter():
         self._add_columns_into_report_dataframe('LAT')
         self._add_columns_into_report_dataframe('Util')
 
-        return 0
+        return None
 
     def _complete_report_dataframe(self):
         """Complete the report DataFrame."""
         # Deal with every Series in report DataFrame
         for (index, series) in self.df_report.iterrows():
-
-            # Only for debugging (remove before publishing)
-            if index > 5:
-                continue
 
             # Look up the sub DataFrame from the base samples
             my_sub_base = self.df_base[
@@ -300,7 +295,7 @@ class FioBenchmarkReporter():
         """Format the report DataFrame."""
         self.df_report = self.df_report.round(4)
         self.df_report = self.df_report.fillna('N/A')
-        return 0
+        return None
 
     def report_to_csv(self, params={}):
         """Dump the report DataFrame to a csv file.
