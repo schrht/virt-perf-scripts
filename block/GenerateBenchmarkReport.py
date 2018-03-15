@@ -2,10 +2,6 @@
 
 # Generate Benchmark Report
 
-#import json
-#import re
-#import os
-#import prettytable
 import pandas as pd
 from scipy.stats import ttest_rel
 from scipy.stats import ttest_ind
@@ -21,10 +17,7 @@ class FioBenchmarkReporter():
     # The DataFrame for target data which used for reporting.
     df_report = None
 
-    def _get_significance(self, array1, array2, paired=False):
-        '''
-        This function used to get the significance of t-test.
-        '''
+    def _get_significance(self, array1, array2, paired):
 
         if paired:
             (statistic, pvalue) = ttest_rel(array1, array2)
@@ -61,9 +54,9 @@ class FioBenchmarkReporter():
         if (higher_is_better and pct_diff > 0) or (not higher_is_better
                                                    and pct_diff < 0):
             if abs(pct_diff) >= REGRESSION_THRESHOLD:
-                return 'Significantly Improved'
+                return 'Significantly Improvement'
             else:
-                return 'Slightly Improved'
+                return 'Slightly Improvement'
         else:
             if abs(pct_diff) >= REGRESSION_THRESHOLD:
                 return 'Significantly Regression'
@@ -83,7 +76,8 @@ class FioBenchmarkReporter():
         self.df_report.insert(len(self.df_report.columns), label + '-SIGN', 0)
         self.df_report.insert(
             len(self.df_report.columns), label + '-CONCLUSION', 0)
-        return 0
+
+        return None
 
     def _calculate_and_fill_report_series(self, series, df_base, df_test,
                                              label, source_label,
@@ -194,7 +188,7 @@ class FioBenchmarkReporter():
             # Save the changes
             self.df_report.iloc[index] = series
 
-        return 0
+        return None
 
     def generate_report(self, params={}):
 
@@ -207,7 +201,7 @@ class FioBenchmarkReporter():
         # Format report DataFrame
         self._format_report_dataframe()
 
-        return 0
+        return None
 
     def _format_report_dataframe(self):
         self.df_report = self.df_report.round(4)
@@ -232,6 +226,8 @@ class FioBenchmarkReporter():
         except Exception, err:
             print 'Error while dumping to csv file: %s' % err
             return 1
+
+        return 0
 
 
 if __name__ == '__main__':
