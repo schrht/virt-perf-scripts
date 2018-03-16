@@ -28,6 +28,94 @@ class FioBenchmarkReporter():
     # The DataFrame to store the benchmark report
     df_report = None
 
+    def load_samples(self, params={}):
+        """Load the base and test samples.
+
+        Load the base and test samples from csv files specified.
+
+        Args:
+            params: dict
+                base_csv: string, the csv file for base samples;
+                test_csv: string, the csv file for test samples;
+
+        Returns:
+            0: Passed
+            1: Failed
+
+        Updates:
+            self.df_base: store the base samples;
+            self.df_test: store the test samples;
+
+        Raises:
+            1. Error while reading from csv file
+
+        """
+        # Parse required params
+        if 'base_csv' not in params:
+            print 'Missing required params: params[base_csv]'
+            return 1
+
+        if 'test_csv' not in params:
+            print 'Missing required params: params[test_csv]'
+            return 1
+
+        try:
+            # Load base samples from CSV file
+            print 'Reading base samples from csv file "%s"...' % params[
+                'base_csv']
+            self.df_base = pd.read_csv(params['base_csv'])
+
+            # Load test samples from CSV file
+            print 'Reading test samples from csv file "%s"...' % params[
+                'test_csv']
+            self.df_test = pd.read_csv(params['test_csv'])
+
+        except Exception, err:
+            print 'Error while reading from csv file: %s' % err
+            return 1
+
+        return 0
+
+    def _add_columns_into_report_dataframe(self, label):
+        """Add a serial of columns into report DataFrame."""
+        # Add a serial of columns for the specified label
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-BASE-AVG', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-BASE-%SD', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-TEST-AVG', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-TEST-%SD', 0)
+        self.df_report.insert(len(self.df_report.columns), label + '-%DIFF', 0)
+        self.df_report.insert(len(self.df_report.columns), label + '-SIGN', 0)
+        self.df_report.insert(
+            len(self.df_report.columns), label + '-CONCLUSION', 0)
+
+        return None
+
+    def _create_report_dataframe(self):
+        """Create the report DataFrame."""
+        # Create the report DataFrame according to self.df_test
+        self.df_report = self.df_test[[
+            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
+        ]].drop_duplicates()
+
+        # Sort the report DataFrame and reset its index
+        self.df_report = self.df_report.sort_values(by=[
+            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
+        ])
+        self.df_report = self.df_report.reset_index().drop(columns=['index'])
+
+        # Add the new columns to report DataFrame
+        # [Note] Units: BW(MiB/s) / IOPS / LAT(ms) / Util(%)
+        self._add_columns_into_report_dataframe('BW')
+        self._add_columns_into_report_dataframe('IOPS')
+        self._add_columns_into_report_dataframe('LAT')
+        self._add_columns_into_report_dataframe('Util')
+
+        return None
+
     def _get_significance(self, array1, array2, paired):
         """Get the significance of t-test.
 
@@ -107,24 +195,6 @@ class FioBenchmarkReporter():
             else:
                 return 'Slightly Regression'
 
-    def _add_columns_into_report_dataframe(self, label):
-        """Add a serial of columns into report DataFrame."""
-        # Add a serial of columns for the specified label
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-BASE-AVG', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-BASE-%SD', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-TEST-AVG', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-TEST-%SD', 0)
-        self.df_report.insert(len(self.df_report.columns), label + '-%DIFF', 0)
-        self.df_report.insert(len(self.df_report.columns), label + '-SIGN', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-CONCLUSION', 0)
-
-        return None
-
     def _calculate_and_fill_report_series(self, series, df_base, df_test,
                                           label, source_label,
                                           higher_is_better):
@@ -151,76 +221,6 @@ class FioBenchmarkReporter():
             series[label + '-BASE-%SD'], series[label + '-TEST-%SD'],
             series[label + '-%DIFF'], series[label
                                              + '-SIGN'], higher_is_better)
-
-        return None
-
-    def load_samples(self, params={}):
-        """Load the base and test samples.
-
-        Load the base and test samples from csv files specified.
-
-        Args:
-            params: dict
-                base_csv: string, the csv file for base samples;
-                test_csv: string, the csv file for test samples;
-
-        Returns:
-            0: Passed
-            1: Failed
-
-        Updates:
-            self.df_base: store the base samples;
-            self.df_test: store the test samples;
-
-        Raises:
-            1. Error while reading from csv file
-
-        """
-        # Parse required params
-        if 'base_csv' not in params:
-            print 'Missing required params: params[base_csv]'
-            return 1
-
-        if 'test_csv' not in params:
-            print 'Missing required params: params[test_csv]'
-            return 1
-
-        try:
-            # Load base samples from CSV file
-            print 'Reading base samples from csv file "%s"...' % params[
-                'base_csv']
-            self.df_base = pd.read_csv(params['base_csv'])
-
-            # Load test samples from CSV file
-            print 'Reading test samples from csv file "%s"...' % params[
-                'test_csv']
-            self.df_test = pd.read_csv(params['test_csv'])
-
-        except Exception, err:
-            print 'Error while reading from csv file: %s' % err
-            return 1
-
-        return 0
-
-    def _create_report_dataframe(self):
-        """Create the report DataFrame."""
-        # Create the report DataFrame according to self.df_test
-        self.df_report = self.df_test[[
-            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
-        ]].drop_duplicates()
-
-        # Sort the report DataFrame and reset its index
-        self.df_report = self.df_report.sort_values(by=[
-            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
-        ])
-        self.df_report = self.df_report.reset_index().drop(columns=['index'])
-
-        # Add the new columns to report DataFrame
-        # [Note] Units: BW(MiB/s) / IOPS / LAT(ms) / Util(%)
-        self._add_columns_into_report_dataframe('BW')
-        self._add_columns_into_report_dataframe('IOPS')
-        self._add_columns_into_report_dataframe('LAT')
-        self._add_columns_into_report_dataframe('Util')
 
         return None
 
@@ -267,6 +267,12 @@ class FioBenchmarkReporter():
 
         return None
 
+    def _format_report_dataframe(self):
+        """Format the report DataFrame."""
+        self.df_report = self.df_report.round(4)
+        self.df_report = self.df_report.fillna('N/A')
+        return None
+
     def generate_report(self, params={}):
         """Generate benchmark report.
 
@@ -289,12 +295,6 @@ class FioBenchmarkReporter():
         # Format report DataFrame
         self._format_report_dataframe()
 
-        return None
-
-    def _format_report_dataframe(self):
-        """Format the report DataFrame."""
-        self.df_report = self.df_report.round(4)
-        self.df_report = self.df_report.fillna('N/A')
         return None
 
     def report_to_csv(self, params={}):
