@@ -35,8 +35,8 @@ class FioTestReporter():
     # Each item represents a single fio test in python dict format.
     perf_kpi_list = []
 
-    # The table of performance KPIs, which is powered by PrettyTable.
-    table = None
+    # The DataFrame to store performance KPIs, which is powered by Pandas.
+    df_report = None
 
     def _get_raw_data_from_fio_log(self, data_file):
         """Get the raw data from a specified fio log file.
@@ -140,7 +140,6 @@ class FioTestReporter():
             self.raw_data_list: store all the raw data;
 
         """
-
         # Parse required params
         if 'result_path' not in params:
             print 'Missing required params: params[result_path]'
@@ -270,137 +269,118 @@ class FioTestReporter():
 
         return 0
 
-    def performance_kpis_to_csv(self):
-        """Dump performance KPIs to CSV file."""
+    def _create_report_dataframe(self):
+        """Create report DataFrame.
 
-        # Create DataFrame
-        #print pd.DataFrame(self.perf_kpi_list)
-        # Format DataFrame
+        This function creates the report DataFrame by reading the performance
+        KPIs list.
 
-        # Dump DataFrame to CSV file
+        As data source, the following attributes should be ready to use:
+        1. self.perf_kpi_list: the list of performance KPIs.
 
+        Updates:
+            self.df_report: the report DataFrame.
 
-    def build_table(self, params={}):
-        '''
-        This function builds self.table by coverting the data in self.perf_kpi_list.
-        '''
-
-        # Build the table from self.perf_kpi_list
-        try:
-            self.table = prettytable.PrettyTable([
-                "Backend", "Driver", "Format", "RW", "BS", "IODepth",
-                "Numjobs", "Round", "BW(MiB/s)", "IOPS", "LAT(ms)", "Util(%)"
+        """
+        # Create report DataFrame from self.perf_kpi_list
+        self.df_report = pd.DataFrame(
+            self.perf_kpi_list,
+            columns=[
+                'backend', 'driver', 'format', 'rw', 'bs', 'iodepth',
+                'numjobs', 'round', 'bw', 'iops', 'lat', 'util'
             ])
 
-            for perf_kpi in self.perf_kpi_list:
-                self.table.add_row([
-                    perf_kpi['backend'], perf_kpi['driver'],
-                    perf_kpi['format'], perf_kpi['rw'], perf_kpi['bs'],
-                    perf_kpi['iodepth'], perf_kpi['numjobs'],
-                    perf_kpi['round'], perf_kpi['bw'], perf_kpi['iops'],
-                    perf_kpi['lat'], perf_kpi['util']
-                ])
+        # Rename the columns of the report DataFrame
+        self.df_report.rename(
+            columns={
+                'backend': 'Backend',
+                'driver': 'Driver',
+                'format': 'Format',
+                'rw': 'RW',
+                'bs': 'BS',
+                'iodepth': 'IODepth',
+                'numjobs': 'Numjobs',
+                'round': 'Round',
+                'bw': 'BW(MiB/s)',
+                'iops': 'IOPS',
+                'lat': 'LAT(ms)',
+                'util': 'Util(%)'
+            },
+            inplace=True)
 
-        except Exception, err:
-            print 'Error while building self.table: %s' % err
-            return 1
+        return None
 
-        # Format this table
-        self.format_table()
+    def _format_report_dataframe(self):
+        """Format report DataFrame.
 
-        return 0
+        This function sorts and formats the report DataFrame.
 
-    def format_table(self, params={}):
-        '''
-        This function formats the values in self.table so that people can read
-        the outputs conveniently. And this action will not damage the data
-        inside the table.
-        '''
+        As data source, the following attributes should be ready to use:
+        1. self.df_report: the report DataFrame.
 
-        # Edit global settings
-        self.table.float_format = '.4'
+        Updates:
+            self.df_report: the report DataFrame.
 
-        # Edit pre-colume settings
-        self.table.float_format['LAT(ms)'] = '.4'
+        """
+        # Sort the report DataFrame and reset its index
+        self.df_report = self.df_report.sort_values(by=[
+            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
+        ])
+        self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
-        return 0
+        # Format the KPI values
+        self.df_report = self.df_report.round(4)
 
-    def print_table(self, params={}):
-        '''
-        This function makes a copy of self.table, defines the appearance and
-        print it out to the console.
-        '''
+        return None
 
+    def generate_report_dataframe(self):
+        """Generate the report DataFrame.
+
+        This function generates the report DataFrame by reading the
+        performance KPIs list.
+
+        As data source, the following attributes should be ready to use:
+        1. self.perf_kpi_list: the list of performance KPIs.
+
+        Updates:
+            self.df_report: the report DataFrame.
+
+        """
+        # Create DataFrame
+        self._create_report_dataframe()
+
+        # Format DataFrame
+        self._format_report_dataframe()
+
+        return None
+
+    def report_dataframe_to_csv(self, params={}):
+        """Dump the report DataFrame to a csv file.
+
+        As data source, the self.df_report should be ready to use.
+
+        Args:
+            params: dict
+                report_csv: string, the csv file to dump report DataFrame to.
+
+        Returns:
+            0: Passed
+            1: Failed
+
+        Raises:
+            1. Error while dumping to csv file
+
+        """
         # Parse required params
-        if 'table_style' in params:
-            valid_inputs = ('DEFAULT', 'MSWORD_FRIENDLY', 'PLAIN_COLUMNS',
-                            'plain')
-            if params['table_style'] not in valid_inputs:
-                print 'Invalid params: params[table_style]: "%s", the valid inputs are: %s' % (
-                    params['table_style'], valid_inputs)
-                return 1
-
-        # Make a copy of self.table
-        my_table = self.table[:]
-
-        # Edit the appearance
-        if 'table_style' in params:
-            if params['table_style'] == 'DEFAULT':
-                my_table.set_style(prettytable.DEFAULT)
-            if params['table_style'] == 'MSWORD_FRIENDLY':
-                my_table.set_style(prettytable.MSWORD_FRIENDLY)
-            if params['table_style'] == 'PLAIN_COLUMNS':
-                my_table.set_style(prettytable.PLAIN_COLUMNS)
-            if params['table_style'] == 'plain':
-                my_table.border = False
-                my_table.align = 'l'
-                my_table.left_padding_width = 0
-                my_table.right_padding_width = 2
-
-        # Print the table
-        print my_table
-
-        return 0
-
-    def dump_table(self, params={}):
-        '''
-        This function makes a copy of self.table and dump the data into a csv
-        file.
-        '''
-
-        # Parse required params
-        if 'report_path' not in params:
-            print 'Missing required params: params[report_path]'
+        if 'report_csv' not in params:
+            print 'Missing required params: params[report_csv]'
             return 1
 
-        if 'file_name' not in params:
-            print 'Missing required params: params[file_name]'
-            return 1
-
-        # Make a copy of self.table
-        my_table = self.table[:]
-
-        # Edit the appearance and get the string content
-        my_table.set_style(prettytable.PLAIN_COLUMNS)
-        content = my_table.get_string()
-
-        # Convert the content to csv format
+        # Write the report to the csv file
         try:
-            reObj = re.compile('  +')
-            content = str(reObj.sub(',', content))
-            content = content.replace(',\n', '\n')
-            content = content.replace('\n,', '\n')
-            content = content.strip(',')
-
-        except Exception, err:
-            print 'Error while converting to csv format: %s' % err
-            return 1
-
-        # Write the content to a csv file
-        try:
-            csv_file = params['report_path'] + '/' + params['file_name']
-            print 'Dumping data into csv file "%s"...' % csv_file
-            with open(csv_file, 'w') as f:
+            print 'Dumping data into csv file "%s"...' % params['report_csv']
+            content = self.df_report.to_csv()
+            with open(params['report_csv'], 'w') as f:
                 f.write(content)
             print 'Finished!'
 
@@ -419,22 +399,7 @@ if __name__ == '__main__':
 
     print ftr.perf_kpi_list
 
-    ftr.performance_kpis_to_csv()
+    ftr.generate_report_dataframe()
+    ftr.report_dataframe_to_csv({'report_csv': './fio_report/report.csv'})
 
     exit(0)
-
-    '''
-    perf_kpis = FioPerformanceKPIs()
-    perf_kpis.load_raw_data({'result_path': './fio_result/'})
-    perf_kpis.extracts_perf_kpis()
-
-    #print 'perf_kpis.perf_kpi_list:', perf_kpis.perf_kpi_list
-    perf_kpis.build_table()
-    perf_kpis.print_table()
-    perf_kpis.dump_table({
-        'report_path': './fio_report/',
-        'file_name': 'report.csv'
-    })
-
-    exit(0)
-    '''
