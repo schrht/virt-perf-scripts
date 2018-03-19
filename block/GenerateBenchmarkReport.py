@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-"""Generate FIO Benchmark Report."""
+"""Generate FIO Benchmark Report.
+
+History:
+v1.0    2018-03-16  cheshi  Finish all the functions.
+"""
 
 import click
 import pandas as pd

@@ -13,6 +13,10 @@
 #    b) "format" - the disk format, such as raw or xfs
 #    c) "round" - the round number, such as 1, 2, 3...
 #    d) "backend" - the hardware which data image based on
+
+History:
+v1.0    2018-02-09  cheshi  Finish all the functions.
+v2.0    2018-03-19  cheshi  Use Pandas replace PrettyTable.
 """
 
 import json
