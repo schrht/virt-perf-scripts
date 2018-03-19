@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python: Current File",
             "type": "python",
@@ -35,6 +36,24 @@
                 "./fio_report/RHEL74_report.csv",
                 "./fio_report/RHEL75_report.csv",
                 "./fio_report/benchmark_report.csv"
+            ]
+        },
+        {
+            "name": "Python: GenerateTestReport.py",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": true,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+            "debugOptions": [
+                "RedirectOutput"
+            ],
+            "args": [
+                "./fio_result/",
+                "./fio_report/report.csv"
             ]
         },
         {

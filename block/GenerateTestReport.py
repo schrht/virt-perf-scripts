@@ -391,15 +391,32 @@ class FioTestReporter():
         return 0
 
 
-if __name__ == '__main__':
-
+@click.command()
+@click.argument('result_path')
+@click.argument('report_csv')
+def generate_fio_test_report(result_path, report_csv):
+    """Generate FIO test report."""
     ftr = FioTestReporter()
-    ftr.load_raw_data_from_fio_logs({'result_path': './fio_result/'})
-    ftr.calculate_performance_kpis()
 
-    print ftr.perf_kpi_list
+    ret = ftr.load_raw_data_from_fio_logs({'result_path': result_path})
+    if ret != 0:
+        exit(1)
+
+    ret = ftr.calculate_performance_kpis()
+    if ret != 0:
+        exit(1)
 
     ftr.generate_report_dataframe()
-    ftr.report_dataframe_to_csv({'report_csv': './fio_report/report.csv'})
+
+    ret = ftr.report_dataframe_to_csv({'report_csv': report_csv})
+    if ret != 0:
+        exit(1)
+
+    exit(0)
+
+
+if __name__ == '__main__':
+
+    generate_fio_test_report()
 
     exit(0)
