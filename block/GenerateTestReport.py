@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate FIO Benchmark Report.
+"""Generate FIO Test Report.
 
 # Interface between StoragePerformanceTest.py
 # StoragePerformanceTest.py should do:
