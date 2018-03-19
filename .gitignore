@@ -104,3 +104,4 @@ ENV/
 *.fiolog.json
 
 block/samples/benchmark_report.csv
+block/samples/report.csv
