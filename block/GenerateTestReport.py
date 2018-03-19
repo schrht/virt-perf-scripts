@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Generate FIO Benchmark Report.
 
 # Interface between StoragePerformanceTest.py
 # StoragePerformanceTest.py should do:
@@ -12,30 +13,40 @@
 #    b) "format" - the disk format, such as raw or xfs
 #    c) "round" - the round number, such as 1, 2, 3...
 #    d) "backend" - the hardware which data image based on
+"""
 
 import json
 import re
 import os
-import prettytable
-
 import click
 import pandas as pd
 
 
 class FioTestReporter():
-    '''
-    Get, deal with and covert the performance KPI data from FIO tools.
-    '''
+    """FIO Test Reporter.
 
-    # The list of raw data, the item is loaded from fio output file.
-    # Each item is a full data source (raw data) in json format.
+    This class used to generate the fio test report. As basic functions:
+    1. It loads the raw data from from fio log files;
+    2. It analyse the raw data and extract performance KPIs from raw data;
+    3. It generates the report DataFrame and dump to a CSV file;
+
+    Attributes:
+        raw_data_list: the list to store raw data.
+        perf_kpi_list: the list to store performance KPI tuples.
+        df_report: a DataFrame to store the test report.
+
+    """
+
+    # The list of raw data, the item is loaded from fio log file.
+    # Each item is a full data source (raw data) in Python dict format.
     raw_data_list = []
 
     # The list of performance KPIs, which are extracted from the raw data.
-    # Each item represents a single fio test in python dict format.
+    # Each item represents a single fio test results in Python dict format.
     perf_kpi_list = []
 
-    # The DataFrame to store performance KPIs, which is powered by Pandas.
+    # The DataFrame to store performance KPIs for reporting, which is powered
+    # by Pandas.
     df_report = None
 
     def _get_raw_data_from_fio_log(self, data_file):
