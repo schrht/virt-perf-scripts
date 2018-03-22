@@ -7,6 +7,7 @@ v1.0    2018-03-16  cheshi  Finish all the functions.
 
 import click
 import pandas as pd
+import numpy as np
 from scipy.stats import ttest_rel
 from scipy.stats import ttest_ind
 
@@ -142,12 +143,8 @@ class FioBenchmarkReporter():
 
         return significance
 
-    def _get_conclusion(self,
-                        base_pct_dev,
-                        test_pct_dev,
-                        pct_diff,
-                        significance,
-                        higher_is_better=True):
+    def _get_conclusion(self, base_pct_dev, test_pct_dev, pct_diff,
+                        significance, higher_is_better):
         """Get the conclusion of the specified KPI.
 
         To reach the conclusion, we need to consider the following conditions:
@@ -163,6 +160,7 @@ class FioBenchmarkReporter():
             higher_is_better: flag, used to adjust improvment or regression.
 
         Returns:
+            'Data Invalid': the input data is invalid;
             'Variance Too Large': the %SD beyonds MAX_PCT_DEV;
             'No Difference': the %DIFF is zero;
             'No Significance': the Significance less than CONFIDENCE_THRESHOLD;
@@ -178,13 +176,16 @@ class FioBenchmarkReporter():
         REGRESSION_THRESHOLD = 5
         CONFIDENCE_THRESHOLD = 0.95
 
+        if np.isnan(base_pct_dev) or np.isnan(test_pct_dev):
+            return 'Data Invalid'
+
         if base_pct_dev > MAX_PCT_DEV or test_pct_dev > MAX_PCT_DEV:
             return 'Variance Too Large'
 
-        if pct_diff == 0:
+        if np.isnan(pct_diff) or pct_diff == 0:
             return 'No Difference'
 
-        if significance < CONFIDENCE_THRESHOLD:
+        if np.isnan(significance) or significance < CONFIDENCE_THRESHOLD:
             return 'No Significance'
 
         if (higher_is_better and pct_diff > 0) or (not higher_is_better
