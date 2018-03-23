@@ -339,7 +339,8 @@ class FioTestReporter():
         """
         # Sort the report DataFrame and reset its index
         self.df_report = self.df_report.sort_values(by=[
-            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
+            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs',
+            'Round'
         ])
         self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
