@@ -16,7 +16,9 @@
 
 History:
 v1.0    2018-02-09  cheshi  Finish all the functions.
-v2.0    2018-03-19  cheshi  Use Pandas replace PrettyTable.
+v2.0    2018-03-19  cheshi  Use Pandas to replace PrettyTable.
+v2.0.1  2018-03-23  cheshi  Use "NaN" to replace "error" and "n/a".
+v2.0.2  2018-03-23  cheshi  Consider "Round" while sorting the DataFrame.
 """
 
 import json
