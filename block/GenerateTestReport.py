@@ -229,7 +229,7 @@ class FioTestReporter():
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
             else:
                 print 'Error while parsing disk_util: length != 1'
-                perf_kpi['util'] = 'error'
+                perf_kpi['util'] = 'NaN'
 
             # Get additional information
             try:
@@ -239,13 +239,13 @@ class FioTestReporter():
                 print 'Error while parsing additional information: %s' % err
 
             if 'driver' not in perf_kpi:
-                perf_kpi['driver'] = 'n/a'
+                perf_kpi['driver'] = 'NaN'
             if 'format' not in perf_kpi:
-                perf_kpi['format'] = 'n/a'
+                perf_kpi['format'] = 'NaN'
             if 'round' not in perf_kpi:
-                perf_kpi['round'] = 'n/a'
+                perf_kpi['round'] = 'NaN'
             if 'backend' not in perf_kpi:
-                perf_kpi['backend'] = 'n/a'
+                perf_kpi['backend'] = 'NaN'
 
         except Exception, err:
             print 'Error while extracting performance KPIs: %s' % err
