@@ -1,0 +1,12 @@
+NOTES: 2018-04-09
+
+Follow the coding style ../block/GenerateBenchmarkReport.py
+The file name of standard netperf log should be ending with nplog.
+The Additional information should be in JSON format.
+The Additional information should be kept in nplog.info files.
+The nplog and nplog.info file should be corresponding (have the same file name).
+
+boyang@ will create the test scripts for netperf.
+cheshi@ will create the analyse tool for the test results.
+
+
