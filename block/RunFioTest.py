@@ -21,7 +21,8 @@ v0.1    2018-07-31  charles.shih  Refactory based on StoragePerformanceTest.py
 import sys
 import os
 import time
-from MakeTestReport import MakeTestReport
+import itertools
+import yaml
 
 
 class RunFioTest:
@@ -52,8 +53,7 @@ class RunFioTest:
                             [FIO] The list of iodepth parameters for fio.
                             Example: '1, 8, 64'...
         Returns:
-            0: Passed
-            1: Failed
+            None
 
         """
 
@@ -78,60 +78,81 @@ class RunFioTest:
 
         if 'rounds' not in params:
             print 'WARNING: Missing required params: params[rounds]'
-            self.rounds = '1'
+            self.rounds = 1
         else:
             self.rounds = params['rounds']
 
         if 'target' not in params:
             print 'ERROR: Missing required params: params[target]'
-            return 1
+            exit(1)
         else:
             self.target = params['target']
 
         if 'runtime' not in params:
             print 'ERROR: Missing required params: params[runtime]'
-            return 1
+            exit(1)
         else:
             self.runtime = params['runtime']
 
         if 'direct' not in params:
             print 'ERROR: Missing required params: params[direct]'
-            return 1
+            exit(1)
         else:
             self.direct = params['direct']
 
         if 'numbjobs' not in params:
             print 'ERROR: Missing required params: params[numbjobs]'
-            return 1
+            exit(1)
+        elif not isinstance(params['numbjobs'], int):
+            print 'ERROR: params[numbjobs] must be an integer.'
+            exit(1)
         else:
             self.numbjobs = params['numbjobs']
 
         if 'rw_list' not in params:
             print 'ERROR: Missing required params: params[rw_list]'
-            return 1
+            exit(1)
+        elif not isinstance(params['rw_list'], list) and not isinstance(
+                params['rw_list'], tuple):
+            print 'ERROR: params[rw_list] must be a list or tuple.'
+            exit(1)
         else:
             self.rw_list = params['rw_list']
 
         if 'bs_list' not in params:
             print 'ERROR: Missing required params: params[bs_list]'
-            return 1
+            exit(1)
+        elif not isinstance(params['bs_list'], list) and not isinstance(
+                params['bs_list'], tuple):
+            print 'ERROR: params[bs_list] must be a list or tuple.'
+            exit(1)
         else:
             self.bs_list = params['bs_list']
 
         if 'iodepth_list' not in params:
             print 'ERROR: Missing required params: params[iodepth_list]'
-            return 1
+            exit(1)
+        elif not isinstance(params['iodepth_list'], list) and not isinstance(
+                params['iodepth_list'], tuple):
+            print 'ERROR: params[iodepth_list] must be a list or tuple.'
+            exit(1)
         else:
             self.iodepth_list = params['iodepth_list']
 
+        return None
 
-#        self.rw_list = ['read', 'write', 'randread', 'randwrite', 'rw', 'randrw']
-#        self.bs_list = ['4k', '16k', '64k', '256k']
-#        self.iodepth_list = ['1', '8', '64']
-#        self.m_dir_result = r"./fio_result"
-#        self.m_dir_report = r"./fio_report"
+    def _split_fio_tests(self):
+        # Cartesian product the fio parameters
+        # (round, rw, bs, iodepth)
+        fio_params = itertools.product(
+            range(1, self.rounds + 1), self.rw_list, self.bs_list,
+            self.iodepth_list)
 
-        return 0
+        num = 0
+        for i in fio_params:
+            num += 1
+            print i
+        print num
 
     def do_fio_run(self):
 
@@ -199,31 +220,37 @@ class RunFioTest:
                             print "======================================================\n"
                             file_number = file_number + 1
 
+
 if __name__ == '__main__':
 
     starttime = time.time()
-    time.sleep(5)
+    #time.sleep(5)
 
     print "Start to run fio performance test ! \n"
 
-    # Run performa
-    storage_performance = StoragePerformanceTest()
-    storage_performance.parse_argument()
-    storage_performance.do_fio_run()
-    time.sleep(1)
-    print "Start to generate fio performance test report! \n"
-    make_report = MakeTestReport(storage_performance.m_dir_result,
-                                 storage_performance.m_dir_report)
-    make_report.parse_result_to_report()
-    time.sleep(5)
+    params = {}
 
-    #print "total file number is:", file_number
-    endtime = time.time()
-    duration_time = (endtime - starttime) / 60.0
-    print "total running duration is: %s minutes" % duration_time
+    # Read user configuration from yaml file
+    try:
+        if os.path.exists('./RunFioTest.yaml'):
+            config_file = './RunFioTest.yaml'
+        else:
+            config_file = os.path.expanduser('~/.RunFioTest.yaml')
 
-    send_email(
-        "Have done storage performance test",
-        "----------\nThis is a mail sent automatically by performance test MakeTestReport.py"
-    )
-    sys.exit(0)
+        with open(config_file, 'r') as f:
+            yaml_dict = yaml.load(f)
+
+        if 'RunFioTest' in yaml_dict:
+            params = yaml_dict['RunFioTest']
+
+    except Exception as err:
+        print 'ERROR: error while parsing "%s".' % (config_file)
+        print err
+        exit(1)
+
+    print params
+
+    rft = RunFioTest(params)
+    rft._split_fio_tests()
+
+    exit(0)
