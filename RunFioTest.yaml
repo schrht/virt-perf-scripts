@@ -1,12 +1,12 @@
 RunFioTest:
-  backend: NVME
-  driver: SCSI
-  fs: RAW
+  backend: N/A
+  driver: N/A
+  fs: N/A
   rounds: 5
   target: /dev/xvdf
   runtime: 1m
   direct: 1
-  numbjobs: 16
+  numjobs: 16
   rw_list:
     - write
     - read

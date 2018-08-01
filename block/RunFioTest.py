@@ -18,7 +18,6 @@ History:
 v0.1    2018-07-31  charles.shih  Refactory based on StoragePerformanceTest.py
 """
 
-import sys
 import os
 import time
 import itertools
@@ -44,7 +43,7 @@ class RunFioTest:
                 runtime:    [FIO] The interval for the test to be lasted.
                 direct:     [FIO] Direct access to the disk.
                             Example: '0' (using cache), '1' (direct access).
-                numbjobs:   [FIO] The number of jobs for an fio test.
+                numjobs:   [FIO] The number of jobs for an fio test.
                 rw_list:    [FIO] The list of rw parameters for fio.
                             Example: 'write, read, randrw'...
                 bs_list:    [FIO] The list of bs parameters for fio.
@@ -57,33 +56,48 @@ class RunFioTest:
 
         """
 
-        # Parse the params
+        # Parse and check the params
         if 'backend' not in params:
-            print 'WARNING: Missing required params: params[backend]'
-            self.backend = ''
+            print 'ERROR: Missing required params: params[backend]'
+            exit(1)
+        elif not isinstance(params['backend'], str):
+            print 'ERROR: params[backend] must be string.'
+            exit(1)
         else:
             self.backend = params['backend']
 
         if 'driver' not in params:
-            print 'WARNING: Missing required params: params[driver]'
-            self.driver = ''
+            print 'ERROR: Missing required params: params[driver]'
+            exit(1)
+        elif not isinstance(params['driver'], str):
+            print 'ERROR: params[driver] must be string.'
+            exit(1)
         else:
             self.driver = params['driver']
 
         if 'fs' not in params:
-            print 'WARNING: Missing required params: params[fs]'
-            self.fs = ''
+            print 'ERROR: Missing required params: params[fs]'
+            exit(1)
+        elif not isinstance(params['fs'], str):
+            print 'ERROR: params[fs] must be string.'
+            exit(1)
         else:
             self.fs = params['fs']
 
         if 'rounds' not in params:
-            print 'WARNING: Missing required params: params[rounds]'
-            self.rounds = 1
+            print 'ERROR: Missing required params: params[rounds]'
+            exit(1)
+        elif not isinstance(params['rounds'], int) or params['rounds'] < 1:
+            print 'ERROR: params[rounds] must be an integer >= 1.'
+            exit(1)
         else:
             self.rounds = params['rounds']
 
         if 'target' not in params:
             print 'ERROR: Missing required params: params[target]'
+            exit(1)
+        elif not isinstance(params['target'], str):
+            print 'ERROR: params[target] must be string.'
             exit(1)
         else:
             self.target = params['target']
@@ -91,29 +105,34 @@ class RunFioTest:
         if 'runtime' not in params:
             print 'ERROR: Missing required params: params[runtime]'
             exit(1)
+        elif not isinstance(params['runtime'], str):
+            print 'ERROR: params[runtime] must be string.'
+            exit(1)
         else:
             self.runtime = params['runtime']
 
         if 'direct' not in params:
             print 'ERROR: Missing required params: params[direct]'
             exit(1)
+        elif not params['direct'] in (0, 1):
+            print 'ERROR: params[direct] must be integer 0 or 1.'
+            exit(1)
         else:
             self.direct = params['direct']
 
-        if 'numbjobs' not in params:
-            print 'ERROR: Missing required params: params[numbjobs]'
+        if 'numjobs' not in params:
+            print 'ERROR: Missing required params: params[numjobs]'
             exit(1)
-        elif not isinstance(params['numbjobs'], int):
-            print 'ERROR: params[numbjobs] must be an integer.'
+        elif not isinstance(params['numjobs'], int):
+            print 'ERROR: params[numjobs] must be an integer.'
             exit(1)
         else:
-            self.numbjobs = params['numbjobs']
+            self.numjobs = params['numjobs']
 
         if 'rw_list' not in params:
             print 'ERROR: Missing required params: params[rw_list]'
             exit(1)
-        elif not isinstance(params['rw_list'], list) and not isinstance(
-                params['rw_list'], tuple):
+        elif not isinstance(params['rw_list'], (list, tuple)):
             print 'ERROR: params[rw_list] must be a list or tuple.'
             exit(1)
         else:
@@ -122,8 +141,7 @@ class RunFioTest:
         if 'bs_list' not in params:
             print 'ERROR: Missing required params: params[bs_list]'
             exit(1)
-        elif not isinstance(params['bs_list'], list) and not isinstance(
-                params['bs_list'], tuple):
+        elif not isinstance(params['bs_list'], (list, tuple)):
             print 'ERROR: params[bs_list] must be a list or tuple.'
             exit(1)
         else:
@@ -132,8 +150,7 @@ class RunFioTest:
         if 'iodepth_list' not in params:
             print 'ERROR: Missing required params: params[iodepth_list]'
             exit(1)
-        elif not isinstance(params['iodepth_list'], list) and not isinstance(
-                params['iodepth_list'], tuple):
+        elif not isinstance(params['iodepth_list'], (list, tuple)):
             print 'ERROR: params[iodepth_list] must be a list or tuple.'
             exit(1)
         else:
@@ -142,83 +159,65 @@ class RunFioTest:
         return None
 
     def _split_fio_tests(self):
-        # Cartesian product the fio parameters
-        # (round, rw, bs, iodepth)
-        fio_params = itertools.product(
+        """Split fio test parameters.
+
+        This function splits the parameters for running the fio tests.
+
+        It will do Cartesian product with self.rounds, self.rw_list,
+        self.bs_list and self.iodepth_list.
+
+        Args:
+            None
+
+        Returns:
+            The iterator of fio test parameters in (round, rw, bs, iodepth).
+
+        """
+
+        # Cartesian product with fio parameters
+        return itertools.product(
             range(1, self.rounds + 1), self.rw_list, self.bs_list,
             self.iodepth_list)
 
-        num = 0
-        for i in fio_params:
-            num += 1
-            print i
-        print num
+    def run_tests(self):
+        fio_params = self._split_fio_tests()
+        for fio_param in fio_params:
+            (rd, rw, bs, iodepth) = fio_param
 
-    def do_fio_run(self):
+            # prepare log file
+            output_path = './aaa'
+            output_file = 'bbb.fiolog'  # TODO: log file names
 
-        file_number = 0
-        for m_test_round_item in range(1, self.m_test_round + 1):
-            for m_rw_item in self.m_rw:
-                for m_bs_item in self.m_bs:
-                    for m_iodepth_item in self.m_iodepth:
-                        for m_disk_filename_dic_key in self.m_disk_filename_dic:
+            if not os.path.exists(output_path):
+                os.mkdir(output_path)
 
-                            m_filename_item = self.m_disk_filename_dic[
-                                m_disk_filename_dic_key]
+            output = output_path + os.sep + output_file
 
-                            seq = (self.m_gen_type, m_disk_filename_dic_key,
-                                   m_rw_item, m_bs_item, m_iodepth_item,
-                                   m_filename_item, str(m_test_round_item))
-                            # This is sequence of strings.
-                            output_name = "_".join(seq)
-                            output_name = output_name
-                            output_name = output_name.replace(os.sep, '')
-                            output_name_fio = output_name + ".fiolog"
-                            output_name_fio = self.m_dir_result + os.sep + output_name_fio
-                            if not os.path.exists(self.m_dir_result):
-                                os.mkdir(self.m_dir_result)
+            # Build fio command
+            command = 'fio'
+            command += ' --filename=%s' % self.target
+            command += ' --ioengine=libaio'
+            command += ' --iodepth=%s' % iodepth
+            command += ' --rw=%s' % rw
+            command += ' --bs=%s' % bs
+            command += ' --direct=%s' % self.direct
+            command += ' --size=512M'
+            command += ' --numjobs=%s' % self.numjobs
+            command += ' --group_reporting'
+            command += ' --time_based'
+            command += ' --runtime=%s' % self.runtime
+            command += ' --output-format=normal,json+'
+            command += ' --output=%s' % output
+            command += ' --description="%s"' % {
+                'backend': self.backend,
+                'driver': self.driver,
+                'format': self.fs,
+                'round': rd
+            }
 
-                            # Set additional information
-                            try:
-                                info = {}
-                                info['backend'] = 'nvme-ssd'
-                                info['round'] = str(m_test_round_item)
-                                info['driver'] = m_disk_filename_dic_key.split(
-                                    '_')[0]
-                                if m_disk_filename_dic_key.split('_')[
-                                        1] == 'fs':
-                                    info['format'] = self.m_fs_type
-                                else:
-                                    info['format'] = 'raw'
-
-                            except Exception, err:
-                                print 'Error while setting additional information: %s' % err
-
-                            if 'backend' not in info:
-                                info['backend'] = 'n/a'
-                            if 'round' not in info:
-                                info['round'] = 'n/a'
-                            if 'driver' not in info:
-                                info['driver'] = 'n/a'
-                            if 'format' not in info:
-                                info['format'] = 'n/a'
-
-                            description = str(info)
-
-                            # Execute command
-                            command = 'fio --filename=%s --name=%s --ioengine=libaio --iodepth=%s --rw=%s \
-                            --bs=%s --direct=%s --size=512M --numjobs=%s --group_reporting --time_based --runtime=%s \
-                            --output-format=normal,json+ --output=%s --description="%s"' % (
-                                m_filename_item, output_name, m_iodepth_item,
-                                m_rw_item, m_bs_item, self.m_direct,
-                                self.m_numbjobs, self.m_runtime,
-                                output_name_fio, description)
-                            os.system(command)
-                            time.sleep(1)
-                            print command
-                            print "current test number is:", file_number
-                            print "======================================================\n"
-                            file_number = file_number + 1
+            # Execute fio test
+            print command
+            #os.system(command)
 
 
 if __name__ == '__main__':
@@ -251,6 +250,6 @@ if __name__ == '__main__':
     print params
 
     rft = RunFioTest(params)
-    rft._split_fio_tests()
+    rft.run_tests()
 
     exit(0)
