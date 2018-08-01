@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Run FIO Test.
 
 # Interface between GenerateTestReport.py
@@ -19,236 +18,120 @@ History:
 v0.1    2018-07-31  charles.shih  Refactory based on StoragePerformanceTest.py
 """
 
-from argparse import ArgumentParser
-
 import sys
 import os
-import smtplib
 import time
 from MakeTestReport import MakeTestReport
-if sys.version < '2.5':
-    from email.MIMEText import MIMEText
-else:
-    from email.mime.text import MIMEText
-
-smtpserver = "smtp.corp.redhat.com"
-mail_from = "xuli@redhat.com"
-mail_to = ["xuli@redhat.com"]
-
-# Test requirement
-# Gen1:
-# IDE: /home (fs belongs to /sda2)
-# IDE: /dev/sdb  (add disk raw disk)
-# SCSI: /mnt/tmp (add disks. format, mount from /dev/sdc1 to /mnt, touch tmp file /mnt/tmp)
-# SCSI: /dev/sdd (add disk raw disk)
-
-# (fs, raw)
-
-# Gen2:
-# SCSI: /home  (fs belongs to /sda2)
-# SCSI: /dev/sdb (add disk raw disk)
-
-# 5 string, by default
 
 
-def send_email(subject, content):
+class RunFioTest:
+    def __init__(self, params={}):
+        """Init RunFioTest Class.
 
-    msg = MIMEText(content, _subtype='plain', _charset='utf-8')
-    msg["Subject"] = subject
-    msg["From"] = mail_from
-    msg["To"] = ','.join(mail_to)
+        This function initializes the parameters for running the fio tests.
 
-    try:
-        server = smtplib.SMTP()
-        server.connect(smtpserver)
-        server.sendmail(mail_from, mail_to, msg.as_string())
-        server.close()
-    except Exception, e:
-        print str(e)
+        Args:
+            params: dict
+                backend:    The backend device where vdisk based on. Such as
+                            "HDD", "SSD", "NVME"...
+                driver:     The vdisk driver used in hypervisor.
+                            Example: "SCSI", "IDE"...
+                fs:         The filesystem of the disk in VM, "RAW" for none.
+                            Example: "RAW", "XFS", "EXT4"...
+                rounds:     Rounds which the same test repeats for.
+                target:     [FIO] The raw disk or file to be tested by fio.
+                runtime:    [FIO] The interval for the test to be lasted.
+                direct:     [FIO] Direct access to the disk.
+                            Example: '0' (using cache), '1' (direct access).
+                numbjobs:   [FIO] The number of jobs for an fio test.
+                rw_list:    [FIO] The list of rw parameters for fio.
+                            Example: 'write, read, randrw'...
+                bs_list:    [FIO] The list of bs parameters for fio.
+                            Example: '4k, 16k, 64k, 256k, 1m'...
+                iodepth_list:
+                            [FIO] The list of iodepth parameters for fio.
+                            Example: '1, 8, 64'...
+        Returns:
+            0: Passed
+            1: Failed
 
-
-class StoragePerformanceTest:
-    def __init__(self):
-
-        if os.path.exists('/sys/firmware/efi'):
-            self.m_gen_type = 'gen2'
-        else:
-            self.m_gen_type = 'gen1'
-
-        # default value for parameter
-        self.m_disk_type = 'SCSI_fs'
-        self.m_filename = None
-        self.m_runtime = '1m'
-        self.m_fs_type = 'xfs'
-
-        # run how many round performance tets, if 0, only generate report
-        self.m_test_round = 5
-        self.m_direct = '1'
-        # 1 cost string
-        self.m_numbjobs = '16'
-
-        # m_rw=['write','read','randwrite','randread','randrw']
-        # 4 loop array
-
-        # *) rw, "read write randread randwrite rw randrw"
-        # *) bs, "4k 16k 64k 256k"
-        # *) iodepth, "1 8 64", IO Engine = libaio
-        self.m_rw = ['read', 'write', 'randread', 'randwrite', 'rw', 'randrw']
-        self.m_bs = ['4k', '16k', '64k', '256k']
-        self.m_iodepth = ['1', '8', '64']
-        self.m_disk_filename_dic = {}
-
-        self.m_dir_result = r"./fio_result"
-        self.m_dir_report = r"./fio_report"
-
-    def parse_argument(self):
-        """
-        Description:
-            Parse input argument for fio, test round .etc
-        Input Parameter:
-            None
-        Return Value:
-            None
         """
 
-        # running command "python mk_iso.py -b RHEL-7.2-20151030.0 -d"
-        parser = ArgumentParser()
-
-        parser.add_argument(
-            "-rw",
-            type=str,
-            dest='m_rw',
-            help="set the rw mode, write,read,randrw",
-            required=False)
-        parser.add_argument(
-            "-bs",
-            type=str,
-            dest='m_bs',
-            help="set the block size, 4k,16k,128k",
-            required=False)
-        parser.add_argument(
-            "-iodepth",
-            type=str,
-            dest='m_iodepth',
-            help="set the iodepth, 1,16",
-            required=False)
-        parser.add_argument(
-            "-filename",
-            type=str,
-            dest='m_filename',
-            help="set the test file path, /dev/sdb,/mnt",
-            required=False)
-
-        parser.add_argument(
-            "-disk_type",
-            type=str,
-            dest='m_disk_type',
-            help=
-            "set the disk type, fc_raw,fc_fs,scsi_raw,scsi_fs,ide_raw,ide_fs,ssd",
-            required=False)
-        parser.add_argument(
-            "-runtime",
-            type=str,
-            dest='m_runtime',
-            help="set the run time duration",
-            required=False)
-        parser.add_argument(
-            "-fs_type",
-            type=str,
-            dest='m_fs_type',
-            help="set the test file system type, xfs,ext4 ",
-            required=False)
-        parser.add_argument(
-            "-direct",
-            type=str,
-            dest='m_direct',
-            help="set the direct option, whether use cache data",
-            required=False)
-        parser.add_argument(
-            "-test_round",
-            type=int,
-            dest='m_test_round',
-            help="set the test round number, if set as 0, only generate report",
-            required=False)
-
-        parser.add_argument(
-            "-dir_result",
-            type=str,
-            dest='m_dir_result',
-            help="set the fio output file directory",
-            required=False)
-        parser.add_argument(
-            "-dir_report",
-            type=str,
-            dest='m_dir_report',
-            help="set the final test report directory",
-            required=False)
-
-        args = parser.parse_args()
-
-        if args.m_rw is not None:
-            self.m_rw = args.m_rw.split(",")
-
-        if args.m_bs is not None:
-            self.m_bs = args.m_bs.split(",")
-
-        if args.m_iodepth is not None:
-            self.m_iodepth = args.m_iodepth.split(",")
-
-        if args.m_filename is not None:
-            self.m_filename = args.m_filename.split(",")
-
-        if args.m_disk_type is not None:
-            self.m_disk_type = args.m_disk_type.split(",")
-
-        if args.m_runtime is not None:
-            self.m_runtime = args.m_runtime
-
-        if args.m_fs_type is not None:
-            self.m_fs_type = args.m_fs_type
-
-        if args.m_test_round is not None:
-            self.m_test_round = args.m_test_round
-
-        if args.m_direct is not None:
-            self.m_direct = args.m_direct
-
-        if args.m_dir_result is not None:
-            self.m_dir_result = args.m_dir_result
-
-        if args.m_dir_report is not None:
-            self.m_dir_report = args.m_dir_report
-
-        if self.m_filename is None:
-            if self.m_gen_type == 'gen2':
-                self.m_disk_filename_dic = {
-                    'SCSI_fs': '/home/tmp',
-                    'SCSI_raw': '/dev/sdb'
-                }
-
-            elif self.m_gen_type == 'gen1':
-                self.m_disk_filename_dic = {
-                    'IDE_fs': '/mnt1/tmp',
-                    'IDE_raw': '/dev/sdb',
-                    'SCSI_fs': '/mnt2/tmp',
-                    'SCSI_raw': '/dev/sdd'
-                }
-                if not os.path.exists('/mnt1/tmp'):
-                    os.system('touch /mnt1/tmp')
-                if not os.path.exists('/mnt2/tmp'):
-                    os.system('touch /mnt2/tmp')
-            # TODO, check /dev/sdc mounted to /mnt
+        # Parse the params
+        if 'backend' not in params:
+            print 'WARNING: Missing required params: params[backend]'
+            self.backend = ''
         else:
-            temp_disk_type = 0
-            for m_filename_item in self.m_filename:
-                if not os.path.exists(m_filename_item):
-                    raise Exception(
-                        "filename path does not exist%s" % m_filename_item)
-                for m_disk_type_item in self.m_disk_type:
-                    self.m_disk_filename_dic[
-                        m_disk_type_item
-                        + str(temp_disk_type)] = m_filename_item
-                    temp_disk_type = temp_disk_type + 1
+            self.backend = params['backend']
+
+        if 'driver' not in params:
+            print 'WARNING: Missing required params: params[driver]'
+            self.driver = ''
+        else:
+            self.driver = params['driver']
+
+        if 'fs' not in params:
+            print 'WARNING: Missing required params: params[fs]'
+            self.fs = ''
+        else:
+            self.fs = params['fs']
+
+        if 'rounds' not in params:
+            print 'WARNING: Missing required params: params[rounds]'
+            self.rounds = '1'
+        else:
+            self.rounds = params['rounds']
+
+        if 'target' not in params:
+            print 'ERROR: Missing required params: params[target]'
+            return 1
+        else:
+            self.target = params['target']
+
+        if 'runtime' not in params:
+            print 'ERROR: Missing required params: params[runtime]'
+            return 1
+        else:
+            self.runtime = params['runtime']
+
+        if 'direct' not in params:
+            print 'ERROR: Missing required params: params[direct]'
+            return 1
+        else:
+            self.direct = params['direct']
+
+        if 'numbjobs' not in params:
+            print 'ERROR: Missing required params: params[numbjobs]'
+            return 1
+        else:
+            self.numbjobs = params['numbjobs']
+
+        if 'rw_list' not in params:
+            print 'ERROR: Missing required params: params[rw_list]'
+            return 1
+        else:
+            self.rw_list = params['rw_list']
+
+        if 'bs_list' not in params:
+            print 'ERROR: Missing required params: params[bs_list]'
+            return 1
+        else:
+            self.bs_list = params['bs_list']
+
+        if 'iodepth_list' not in params:
+            print 'ERROR: Missing required params: params[iodepth_list]'
+            return 1
+        else:
+            self.iodepth_list = params['iodepth_list']
+
+
+#        self.rw_list = ['read', 'write', 'randread', 'randwrite', 'rw', 'randrw']
+#        self.bs_list = ['4k', '16k', '64k', '256k']
+#        self.iodepth_list = ['1', '8', '64']
+#        self.m_dir_result = r"./fio_result"
+#        self.m_dir_report = r"./fio_report"
+
+        return 0
 
     def do_fio_run(self):
 
@@ -315,7 +198,6 @@ class StoragePerformanceTest:
                             print "current test number is:", file_number
                             print "======================================================\n"
                             file_number = file_number + 1
-
 
 if __name__ == '__main__':
 
