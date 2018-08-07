@@ -1,5 +1,5 @@
-RunFioTest:
-  log_path: ~/workspace/log/fio_vmm_release_date
+FioTestRunner:
+  log_path: ./fio_report
   backend: na
   driver: na
   fs: na

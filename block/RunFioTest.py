@@ -6,9 +6,8 @@
 # 1. the fio outputs should be at least in json+ format
 #    the "fio --group_reporting" must be used
 # 2. save the fio outputs into *.fiolog
-# 3. put all *.fiolog files into ./fio_result/
-# 4. empty ./fio_report/ folder
-# 5. pass the additional information by "fio --description"
+# 3. put all *.fiolog files into the spcified path
+# 4. pass the additional information by "fio --description"
 #    a) "driver" - frontend driver, such as SCSI or IDE
 #    b) "format" - the disk format, such as raw or xfs
 #    c) "round" - the round number, such as 1, 2, 3...
@@ -19,6 +18,7 @@ v0.1    2018-07-31  charles.shih  Refactory based on StoragePerformanceTest.py
 v0.2    2018-08-03  charles.shih  Implement Class RunFioTest.
 v0.3    2018-08-07  charles.shih  Finish the logic of log handling.
 v0.4    2018-08-07  charles.shih  Add logic to handling CLI.
+v1.0    2018-08-07  charles.shih  Finish the initializtion of this script.
 """
 
 import os
@@ -186,26 +186,26 @@ class FioTestRunner:
 
         It will do Cartesian product with the following itmes:
         - self.rounds
-        - self.rw_list
         - self.bs_list
         - self.iodepth_list
+        - self.rw_list          (Most often changing)
 
         Args:
             None
 
         Returns:
-            The iterator of fio test parameters in (round, rw, bs, iodepth).
+            The iterator of fio test parameters in (round, bs, iodepth, rw).
 
         """
         return itertools.product(
-            range(1, self.rounds + 1), self.rw_list, self.bs_list,
-            self.iodepth_list)
+            range(1, self.rounds + 1), self.bs_list, self.iodepth_list,
+            self.rw_list)
 
     def run_tests(self):
         """Split and run all the sub-cases."""
         fio_params = self._split_fio_tests()
         for fio_param in fio_params:
-            (rd, rw, bs, iodepth) = fio_param
+            (rd, bs, iodepth, rw) = fio_param
 
             # Set log file
             output_path = os.path.expanduser(self.log_path)
@@ -292,18 +292,12 @@ def get_yaml_params():
     yaml_params = {}
 
     try:
-        if os.path.exists('./RunFioTest.yaml'):
-            config_file = './RunFioTest.yaml'
-        else:
-            config_file = os.path.expanduser('~/.RunFioTest.yaml')
-
-        with open(config_file, 'r') as f:
+        with open('./virt_perf_scripts.yaml', 'r') as f:
             yaml_dict = yaml.load(f)
+            yaml_params = yaml_dict['FioTestRunner']
 
-        if 'RunFioTest' in yaml_dict:
-            yaml_params = yaml_dict['RunFioTest']
     except Exception as err:
-        print 'WARNING: error while parsing "%s".' % (config_file)
+        print 'WARNING: Fail to get default value from virt_perf_scripts.yaml'
         print err
 
     return yaml_params
