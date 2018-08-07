@@ -16,10 +16,12 @@
 
 History:
 v0.1    2018-07-31  charles.shih  Refactory based on StoragePerformanceTest.py
+v0.2    2018-08-03  charles.shih  Implement Class RunFioTest.
+v0.3    2018-08-07  charles.shih  Finish the logic of log handling.
 """
 
 import os
-import time
+import time 
 import itertools
 import yaml
 
@@ -43,7 +45,7 @@ class RunFioTest:
                 runtime:    [FIO] The interval for the test to be lasted.
                 direct:     [FIO] Direct access to the disk.
                             Example: '0' (using cache), '1' (direct access).
-                numjobs:   [FIO] The number of jobs for an fio test.
+                numjobs:    [FIO] The number of jobs for an fio test.
                 rw_list:    [FIO] The list of rw parameters for fio.
                             Example: 'write, read, randrw'...
                 bs_list:    [FIO] The list of bs parameters for fio.
@@ -51,6 +53,7 @@ class RunFioTest:
                 iodepth_list:
                             [FIO] The list of iodepth parameters for fio.
                             Example: '1, 8, 64'...
+                log_path:   Where the fio output log will be generated to.
         Returns:
             None
 
@@ -156,6 +159,15 @@ class RunFioTest:
         else:
             self.iodepth_list = params['iodepth_list']
 
+        if 'log_path' not in params:
+            print 'ERROR: Missing required params: params[log_path]'
+            exit(1)
+        elif not isinstance(params['log_path'], str):
+            print 'ERROR: params[log_path] must be string.'
+            exit(1)
+        else:
+            self.log_path = params['log_path']
+
         return None
 
     def _split_fio_tests(self):
@@ -184,12 +196,15 @@ class RunFioTest:
         for fio_param in fio_params:
             (rd, rw, bs, iodepth) = fio_param
 
-            # prepare log file
-            output_path = './aaa'
-            output_file = 'bbb.fiolog'  # TODO: log file names
-
+            # Set log file
+            output_path = os.path.expanduser(self.log_path)
             if not os.path.exists(output_path):
-                os.mkdir(output_path)
+                os.makedirs(output_path)
+
+            output_file = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s.fiolog' % (
+                self.backend, self.driver, self.fs, rw, bs, iodepth,
+                self.numjobs, rd,
+                time.strftime('%Y%m%d%H%M%S', time.localtime()))
 
             output = output_path + os.sep + output_file
 
@@ -222,7 +237,7 @@ class RunFioTest:
 
 if __name__ == '__main__':
 
-    starttime = time.time()
+    starttime = time.strftime('%Y%m%d%H%M%S', time.localtime())
     #time.sleep(5)
 
     print "Start to run fio performance test ! \n"

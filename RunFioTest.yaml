@@ -1,12 +1,13 @@
 RunFioTest:
-  backend: N/A
-  driver: N/A
-  fs: N/A
+  log_path: ~/workspace/log/fio_vmm_release_date
+  backend: na
+  driver: na
+  fs: na
   rounds: 5
   target: /dev/xvdf
   runtime: 1m
   direct: 1
-  numjobs: 16
+  numjobs: 16  
   rw_list:
     - write
     - read
