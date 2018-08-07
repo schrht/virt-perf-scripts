@@ -221,25 +221,29 @@ class FioTestRunner:
 
             # Build fio command
             command = 'fio'
+            command += ' --name=%s' % output_file
             command += ' --filename=%s' % self.target
-            command += ' --ioengine=libaio'
-            command += ' --iodepth=%s' % iodepth
+            command += ' --size=512M'
+            command += ' --direct=%s' % self.direct
             command += ' --rw=%s' % rw
             command += ' --bs=%s' % bs
-            command += ' --direct=%s' % self.direct
-            command += ' --size=512M'
+            command += ' --ioengine=libaio'
+            command += ' --iodepth=%s' % iodepth
             command += ' --numjobs=%s' % self.numjobs
-            command += ' --group_reporting'
             command += ' --time_based'
             command += ' --runtime=%s' % self.runtime
-            command += ' --output-format=normal,json+'
-            command += ' --output=%s' % output
+            command += ' --group_reporting'
             command += ' --description="%s"' % {
                 'backend': self.backend,
                 'driver': self.driver,
                 'format': self.fs,
                 'round': rd
             }
+            command += ' --output-format=normal,json+'
+            command += ' --output=%s' % output
+
+            # Parse options only, don't start any IO (comment before testing)
+            command += ' --parse-only'
 
             # Execute fio test
             print '-' * 50
