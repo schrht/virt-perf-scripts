@@ -9,15 +9,16 @@ RunFioTest:
   direct: 1
   numjobs: 16  
   rw_list:
-    - write
     - read
+    - write
+    - randread
+    - randwrite
     - randrw
   bs_list: 
     - 4k
     - 16k
     - 64k
     - 256k
-    - 1m
   iodepth_list: 
     - 1
     - 8
