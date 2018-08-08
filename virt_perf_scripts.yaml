@@ -1,10 +1,10 @@
 FioTestRunner:
-  log_path: ./fio_report
-  backend: na
-  driver: na
-  fs: na
+  log_path: ./fio_result
+  backend: NaN
+  driver: NaN
+  fs: NaN
   rounds: 5
-  target: /dev/xvdf
+  filename: /dev/xvdf
   runtime: 1m
   direct: 1
   numjobs: 16  

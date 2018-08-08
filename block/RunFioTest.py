@@ -18,7 +18,7 @@ v0.1    2018-07-31  charles.shih  Refactory based on StoragePerformanceTest.py
 v0.2    2018-08-03  charles.shih  Implement Class RunFioTest.
 v0.3    2018-08-07  charles.shih  Finish the logic of log handling.
 v0.4    2018-08-07  charles.shih  Add logic to handling CLI.
-v1.0    2018-08-07  charles.shih  Finish the initializtion of this script.
+v1.0    2018-08-08  charles.shih  Init version.
 """
 
 import os
@@ -45,26 +45,37 @@ class FioTestRunner:
 
         Args:
             params: dict
-                backend:    The backend device where vdisk based on. Such as
-                            "HDD", "SSD", "NVME"...
-                driver:     The vdisk driver used in hypervisor.
-                            Example: "SCSI", "IDE"...
-                fs:         The filesystem of the disk in VM, "RAW" for none.
-                            Example: "RAW", "XFS", "EXT4"...
-                rounds:     Rounds which the same test repeats for.
-                target:     [FIO] The raw disk or file to be tested by fio.
-                runtime:    [FIO] The interval for the test to be lasted.
-                direct:     [FIO] Direct access to the disk.
-                            Example: '0' (using cache), '1' (direct access).
-                numjobs:    [FIO] The number of jobs for an fio test.
-                rw_list:    [FIO] The list of rw parameters for fio.
-                            Example: 'write, read, randrw'...
-                bs_list:    [FIO] The list of bs parameters for fio.
-                            Example: '4k, 16k, 64k, 256k, 1m'...
-                iodepth_list:
-                            [FIO] The list of iodepth parameters for fio.
-                            Example: '1, 8, 64'...
-                log_path:   Where the fio output log will be generated to.
+                backend: str
+                    The backend device where vdisk image is based on.
+                    Example: "HDD", "SSD", "NVME"...
+                driver: str
+                    The driver to power the vdisk..
+                    Example: "SCSI", "IDE"...
+                fs: str
+                    The filesystem of the disk to be tested, "RAW" for no fs.
+                    Example: "RAW", "XFS", "EXT4"...
+                rounds: int
+                    How many rounds the fio test will be repeated.
+                filename: str
+                    [FIO] The disk or specified file(s) to be tested by fio.
+                runtime: str
+                    [FIO] Terminate a job after the specified period of time.
+                direct: str
+                    [FIO] Direct access to the disk.
+                    Example: '0' (using cache), '1' (direct access).
+                numjobs: int
+                    [FIO] Create the specified number of clones of the job.
+                rw_list: list
+                    [FIO] Type of I/O pattern.
+                    Example: 'write, read, randrw'...
+                bs_list: list
+                    [FIO] The block size in bytes used for I/O units.
+                    Example: '4k, 16k, 64k, 256k, 1m'...
+                iodepth_list: list
+                    [FIO] # of I/O units to keep in flight against the file.
+                    Example: '1, 8, 64'...
+                log_path: str
+                    Where the *.fiolog files will be saved to.
         Returns:
             None
 
@@ -105,14 +116,14 @@ class FioTestRunner:
         else:
             self.rounds = params['rounds']
 
-        if 'target' not in params:
-            print 'ERROR: Missing required params: params[target]'
+        if 'filename' not in params:
+            print 'ERROR: Missing required params: params[filename]'
             exit(1)
-        elif not isinstance(params['target'], (unicode, str)):
-            print 'ERROR: params[target] must be string.'
+        elif not isinstance(params['filename'], (unicode, str)):
+            print 'ERROR: params[filename] must be string.'
             exit(1)
         else:
-            self.target = params['target']
+            self.filename = params['filename']
 
         if 'runtime' not in params:
             print 'ERROR: Missing required params: params[runtime]'
@@ -222,7 +233,7 @@ class FioTestRunner:
             # Build fio command
             command = 'fio'
             command += ' --name=%s' % output_file
-            command += ' --filename=%s' % self.target
+            command += ' --filename=%s' % self.filename
             command += ' --size=512M'
             command += ' --direct=%s' % self.direct
             command += ' --rw=%s' % rw
@@ -242,8 +253,8 @@ class FioTestRunner:
             command += ' --output-format=normal,json+'
             command += ' --output=%s' % output
 
-            # Parse options only, don't start any IO (comment before testing)
-            command += ' --parse-only'
+            # Parse options only, don't start any I/O
+            # command += ' --parse-only'  # (comment this line for testing)
 
             # Execute fio test
             print '-' * 50
@@ -254,7 +265,7 @@ class FioTestRunner:
             os.system(command)
 
 
-def get_cli_params(backend, driver, fs, rounds, target, runtime, direct,
+def get_cli_params(backend, driver, fs, rounds, filename, runtime, direct,
                    numjobs, rw_list, bs_list, iodepth_list, log_path):
     """Get parameters from the CLI."""
     cli_params = {}
@@ -267,8 +278,8 @@ def get_cli_params(backend, driver, fs, rounds, target, runtime, direct,
         cli_params['fs'] = fs
     if rounds:
         cli_params['rounds'] = int(rounds)
-    if target:
-        cli_params['target'] = target
+    if filename:
+        cli_params['filename'] = filename
     if runtime:
         cli_params['runtime'] = runtime
     if direct:
@@ -320,17 +331,21 @@ def run_fio_test(params={}):
 
 
 @click.command()
-@click.option('--backend', help='The backend device where vdisk based on.')
-@click.option('--driver', help='The vdisk driver used in hypervisor.')
-@click.option('--fs', help='The filesystem of the disk in VM, "RAW" for none.')
+@click.option(
+    '--backend', help='The backend device where vdisk image is based on.')
+@click.option('--driver', help='The driver to power the vdisk..')
+@click.option(
+    '--fs', help='The filesystem of the disk to be tested, "RAW" for no fs.')
 @click.option(
     '--rounds',
     type=click.IntRange(1, 1000),
-    help='Rounds which the same test repeats for.')
+    help='How many rounds the fio test will be repeated.')
 @click.option(
-    '--target', help='[FIO] The raw disk or file to be tested by fio.')
+    '--filename',
+    help='[FIO] The disk or specified file(s) to be tested by fio.')
 @click.option(
-    '--runtime', help='[FIO] The interval for the test to be lasted.')
+    '--runtime',
+    help='[FIO] Terminate a job after the specified period of time.')
 @click.option(
     '--direct',
     type=click.Choice(['0', '1']),
@@ -338,15 +353,16 @@ def run_fio_test(params={}):
 @click.option(
     '--numjobs',
     type=click.IntRange(1, 65535),
-    help='[FIO] The number of jobs for an fio test.')
-@click.option('--rw_list', help='[FIO] The list of rw parameters for fio.')
-@click.option('--bs_list', help='[FIO] The list of bs parameters for fio.')
+    help='[FIO] Create the specified number of clones of the job.')
+@click.option('--rw_list', help='[FIO] Type of I/O pattern.')
 @click.option(
-    '--iodepth_list', help='[FIO] The list of iodepth parameters for fio.')
+    '--bs_list', help='[FIO] The block size in bytes used for I/O units.')
 @click.option(
-    '--log_path', help='Where the fio output log will be generated to.')
-def cli(backend, driver, fs, rounds, target, runtime, direct, numjobs, rw_list,
-        bs_list, iodepth_list, log_path):
+    '--iodepth_list',
+    help='[FIO] # of I/O units to keep in flight against the file.')
+@click.option('--log_path', help='Where the *.fiolog files will be saved to.')
+def cli(backend, driver, fs, rounds, filename, runtime, direct, numjobs,
+        rw_list, bs_list, iodepth_list, log_path):
     """Command line interface.
 
     Take arguments from CLI, load default parameters from yaml file.
@@ -354,7 +370,7 @@ def cli(backend, driver, fs, rounds, target, runtime, direct, numjobs, rw_list,
 
     """
     # Read user specified parameters from CLI
-    cli_params = get_cli_params(backend, driver, fs, rounds, target, runtime,
+    cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
                                 direct, numjobs, rw_list, bs_list,
                                 iodepth_list, log_path)
 
