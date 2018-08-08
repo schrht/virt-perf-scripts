@@ -6,20 +6,20 @@
 # 1. the fio outputs should be at least in json+ format
 #    the "fio --group_reporting" must be used
 # 2. save the fio outputs into *.fiolog
-# 3. put all *.fiolog files into ./fio_result/
-# 4. empty ./fio_report/ folder
-# 5. pass the additional information by "fio --description"
+# 3. put all *.fiolog files into the spcified path
+# 4. pass the additional information by "fio --description"
 #    a) "driver" - frontend driver, such as SCSI or IDE
 #    b) "format" - the disk format, such as raw or xfs
 #    c) "round" - the round number, such as 1, 2, 3...
 #    d) "backend" - the hardware which data image based on
 
 History:
-v1.0    2018-02-09  cheshi  Finish all the functions.
-v2.0    2018-03-19  cheshi  Use Pandas to replace PrettyTable.
-v2.0.1  2018-03-23  cheshi  Use "NaN" to replace "error" and "n/a".
-v2.0.2  2018-03-23  cheshi  Consider "Round" while sorting the DataFrame.
-v2.0.3  2018-08-08  cheshi  Enhance the output messages.
+v1.0    2018-02-09  charles.shih  Finish all the functions.
+v2.0    2018-03-19  charles.shih  Use Pandas to replace PrettyTable.
+v2.0.1  2018-03-23  charles.shih  Use "NaN" to replace "error" and "n/a".
+v2.0.2  2018-03-23  charles.shih  Consider "Round" while sorting the DataFrame.
+v2.0.3  2018-08-08  charles.shih  Enhance the output messages.
+v2.1    2018-08-08  charles.shih  Update the Command Line Interface.
 """
 
 import json
@@ -413,32 +413,59 @@ class FioTestReporter():
         return 0
 
 
-@click.command()
-@click.argument('result_path')
-@click.argument('report_csv')
 def generate_fio_test_report(result_path, report_csv):
     """Generate FIO test report."""
-    ftr = FioTestReporter()
+    fioreporter = FioTestReporter()
 
-    ret = ftr.load_raw_data_from_fio_logs({'result_path': result_path})
-    if ret != 0:
+    # Load raw data from *.fiolog files
+    return_value = fioreporter.load_raw_data_from_fio_logs({
+        'result_path':
+        result_path
+    })
+    if return_value:
         exit(1)
 
-    ret = ftr.calculate_performance_kpis()
-    if ret != 0:
+    # Caclulate performance KPIs for each test
+    return_value = fioreporter.calculate_performance_kpis()
+    if return_value:
         exit(1)
 
-    ftr.generate_report_dataframe()
+    # Convert the KPIs into Dataframe
+    fioreporter.generate_report_dataframe()
 
-    ret = ftr.report_dataframe_to_csv({'report_csv': report_csv})
-    if ret != 0:
+    # Dump the Dataframe as CSV file
+    return_value = fioreporter.report_dataframe_to_csv({
+        'report_csv': report_csv
+    })
+    if return_value:
         exit(1)
 
     exit(0)
+
+
+@click.command()
+@click.option(
+    '--result_path',
+    type=click.Path(exists=True),
+    help='Specify the path where *.fiolog files are stored in.')
+@click.option(
+    '--report_csv',
+    type=click.Path(),
+    help='Specify the name of CSV file for fio test reports.')
+def cli(result_path, report_csv):
+    """Command Line Interface."""
+    # Parse and check the parameters
+    if not result_path:
+        print '[ERROR] Missing parameter, use "--help" to check the usage.'
+        exit(1)
+    if not report_csv:
+        print '[WARNING] No CSV file name (--report_csv) was specified. Will \
+use "%s/fio_report.csv" instead.' % result_path
+        report_csv = result_path + os.sep + 'fio_report.csv'
+
+    # Generate FIO test report
+    generate_fio_test_report(result_path, report_csv)
 
 
 if __name__ == '__main__':
-
-    generate_fio_test_report()
-
-    exit(0)
+    cli()
