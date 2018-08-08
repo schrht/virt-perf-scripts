@@ -19,6 +19,7 @@ v1.0    2018-02-09  cheshi  Finish all the functions.
 v2.0    2018-03-19  cheshi  Use Pandas to replace PrettyTable.
 v2.0.1  2018-03-23  cheshi  Use "NaN" to replace "error" and "n/a".
 v2.0.2  2018-03-23  cheshi  Consider "Round" while sorting the DataFrame.
+v2.0.3  2018-08-08  cheshi  Enhance the output messages.
 """
 
 import json
@@ -97,7 +98,7 @@ class FioTestReporter():
 
         # Parse required params
         if data_file == '':
-            print 'Missing required params: data_file'
+            print '[ERROR] Missing required params: data_file'
             return (1, None)
 
         # Get the offsets of the first json block
@@ -118,12 +119,13 @@ class FioTestReporter():
                     break
                 num += 1
         except Exception, err:
-            print 'Error while handling fio log file: %s' % err
+            print '[ERROR] Error while handling fio log file: %s' % err
             return (1, None)
 
         # Extract the json block into a new file and get the raw_data
         if begin >= end:
-            print 'Cannot found validate json block in file: %s' % data_file
+            print '[ERROR] Cannot found validate json block in file: %s\
+' % data_file
             return (1, None)
 
         try:
@@ -133,7 +135,7 @@ class FioTestReporter():
                 json_data = json.load(json_file)
                 raw_data = byteify(json_data)
         except Exception, err:
-            print 'Error while handling the new json file: %s' % err
+            print '[ERROR] Error while handling the new json file: %s' % err
             return (1, None)
 
         os.unlink(data_file + '.json')
@@ -159,7 +161,7 @@ class FioTestReporter():
         """
         # Parse required params
         if 'result_path' not in params:
-            print 'Missing required params: params[result_path]'
+            print '[ERROR] Missing required params: params[result_path]'
             return 1
 
         # load raw data from files
@@ -197,7 +199,7 @@ class FioTestReporter():
         """
         # Parse required params
         if raw_data == '':
-            print 'Missing required params: raw_data'
+            print '[ERROR] Missing required params: raw_data'
             return (1, None)
 
         # Get the performance KPIs
@@ -230,7 +232,7 @@ class FioTestReporter():
             if len(raw_data['disk_util']) == 1:
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
             else:
-                print 'Error while parsing disk_util: length != 1'
+                print '[ERROR] Error while parsing disk_util: length != 1'
                 perf_kpi['util'] = 'NaN'
 
             # Get additional information
@@ -238,7 +240,8 @@ class FioTestReporter():
                 dict = eval(raw_data['jobs'][0]['job options']['description'])
                 perf_kpi.update(dict)
             except Exception, err:
-                print 'Error while parsing additional information: %s' % err
+                print '[ERROR] Error while parsing additional information: %s\
+' % err
 
             if 'driver' not in perf_kpi:
                 perf_kpi['driver'] = 'NaN'
@@ -250,7 +253,7 @@ class FioTestReporter():
                 perf_kpi['backend'] = 'NaN'
 
         except Exception, err:
-            print 'Error while extracting performance KPIs: %s' % err
+            print '[ERROR] Error while extracting performance KPIs: %s' % err
             return (1, None)
 
         return (0, perf_kpi)
@@ -391,19 +394,20 @@ class FioTestReporter():
         """
         # Parse required params
         if 'report_csv' not in params:
-            print 'Missing required params: params[report_csv]'
+            print '[ERROR] Missing required params: params[report_csv]'
             return 1
 
         # Write the report to the csv file
         try:
-            print 'Dumping data into csv file "%s"...' % params['report_csv']
+            print '[NOTE] Dumping data into csv file "%s"...' % params[
+                'report_csv']
             content = self.df_report.to_csv()
             with open(params['report_csv'], 'w') as f:
                 f.write(content)
             print 'Finished!'
 
         except Exception, err:
-            print 'Error while dumping to csv file: %s' % err
+            print '[ERROR] Error while dumping to csv file: %s' % err
             return 1
 
         return 0
