@@ -4,7 +4,7 @@ The performance test scripts for virtualization.
 
 # FIO test
 
-This tool is designed to run an FIO benchmark in guest.
+This tool is designed for running an FIO benchmark in guest.
 
 ## Prepare the guest
 
@@ -65,6 +65,8 @@ Typically, you should run the following command to provide enough information:
 $ ./RunFioTest.py --backend NVME --driver SCSI --fs RAW --filename /dev/sdb --log_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809
 ```
 
+This command will create `$HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809` and generate *.fiolog file for each subcase to this path.
+
 ## Generate FIO test report
 
 The manual page of `./GenerateTestReport.py`:
@@ -87,7 +89,7 @@ Typically, you should run the following command:
 $ ./GenerateTestReport.py --result_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809 --report_csv ESXi_FIO_RHEL7u6_20180809.csv
 ```
 
-Then, you got a CSV test report with all the performance KPIs in.
+This command will create a CSV test report with all the performance KPIs in.
 
 ## Generate FIO benchmark report
 
@@ -112,8 +114,8 @@ Typically, you should run the following command:
 $ ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test_csv ./ESXi_FIO_RHEL7u6_20180809.csv --report_csv ESXi_FIO_Benchmark_RHEL7u6_against_RHEL7u5_20180809.csv
 ```
 
-Then, you got a CSV benchmark report which comparing RHEL7.6 performance KPIs against RHEL7.5.
+This command will create a CSV benchmark report which comparing RHEL7.6 performance KPIs against RHEL7.5.
 
 ## Paste the results into Google Speardsheets
 
-Now you can copy paste the contents from CSV file into the [Template of Google Speardsheets](https://docs.google.com/spreadsheets/d/1C5DsB5oWXI0Wl5rGiCLQI09w2nbq96uovPYoF6rvM6Y/edit?usp=sharing).
+You can copy & paste the contents from CSV file into the [Template of Google Speardsheets](https://docs.google.com/spreadsheets/d/1C5DsB5oWXI0Wl5rGiCLQI09w2nbq96uovPYoF6rvM6Y/edit?usp=sharing). So that you could check the benchmark results much more conveniently.
