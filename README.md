@@ -11,23 +11,23 @@ This tool is designed for running an FIO benchmark in guest.
 1. Install [`fio`](https://github.com/axboe/fio/releases) on the guest.
 
 2. Install the following Python modules on the guest via `pip install`:
-- click
-- pandas
-- numpy
-- scipy
-- yaml
+- `click`
+- `pandas`
+- `numpy`
+- `scipy`
+- `yaml`
 
 3. Deliver the following scripts to the guest:
-- ./block/RunFioTest.py
-- ./block/GenerateBenchmarkReport.py
-- ./block/GenerateTestReport.py
-- ./virt_perf_scripts.yaml
+- `./block/RunFioTest.py`
+- `./block/GenerateBenchmarkReport.py`
+- `./block/GenerateTestReport.py`
+- `./virt_perf_scripts.yaml`
 
 ## Run FIO test
 
-The manual page of `./RunFioTest.py`:
+The manual page of `RunFioTest.py`:
 
-```bash
+```
 $ ./RunFioTest.py --help
 Usage: RunFioTest.py [OPTIONS]
 
@@ -61,7 +61,7 @@ If you run `./RunFioTest.py` without any parameter, it will load default value f
 
 Typically, you should run the following command to provide enough information:
 
-```bash
+```
 $ ./RunFioTest.py --backend NVME --driver SCSI --fs RAW --filename /dev/sdb --log_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809
 ```
 
@@ -69,9 +69,9 @@ This command will create `$HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809` and gen
 
 ## Generate FIO test report
 
-The manual page of `./GenerateTestReport.py`:
+The manual page of `GenerateTestReport.py`:
 
-```bash
+```
 $ ./GenerateTestReport.py --help
 Usage: GenerateTestReport.py [OPTIONS]
 
@@ -85,7 +85,7 @@ Options:
 
 Typically, you should run the following command:
 
-```bash
+```
 $ ./GenerateTestReport.py --result_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809 --report_csv ESXi_FIO_RHEL7u6_20180809.csv
 ```
 
@@ -93,9 +93,9 @@ This command will create a CSV test report with all the performance KPIs in.
 
 ## Generate FIO benchmark report
 
-The manual page of `./GenerateBenchmarkReport.py`:
+The manual page of `GenerateBenchmarkReport.py`:
 
-```bash
+```
 $ ./GenerateBenchmarkReport.py --help
 Usage: GenerateBenchmarkReport.py [OPTIONS]
 
@@ -110,7 +110,7 @@ Options:
 
 Typically, you should run the following command:
 
-```bash
+```
 $ ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test_csv ./ESXi_FIO_RHEL7u6_20180809.csv --report_csv ESXi_FIO_Benchmark_RHEL7u6_against_RHEL7u5_20180809.csv
 ```
 
