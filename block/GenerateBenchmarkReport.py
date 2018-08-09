@@ -4,6 +4,7 @@
 History:
 v1.0    2018-03-16  charles.shih  Finish all the functions.
 v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
+v1.1    2018-08-09  charles.shih  Update the Command Line Interface.
 """
 
 import click
@@ -341,27 +342,52 @@ class FioBenchmarkReporter():
         return 0
 
 
-@click.command()
-@click.argument('base_csv')
-@click.argument('test_csv')
-@click.argument('report_csv')
 def generate_fio_benchmark_report(base_csv, test_csv, report_csv):
     """Generate FIO benchmark report."""
-    fbr = FioBenchmarkReporter()
+    fiobenchreporter = FioBenchmarkReporter()
 
-    ret = fbr.load_samples({'base_csv': base_csv, 'test_csv': test_csv})
-    if ret != 0:
+    # Load base and test samples
+    return_value = fiobenchreporter.load_samples({
+        'base_csv': base_csv,
+        'test_csv': test_csv
+    })
+    if return_value:
         exit(1)
 
-    fbr.generate_report()
+    # Generate benchmark report
+    fiobenchreporter.generate_report()
 
-    ret = fbr.report_to_csv({'report_csv': report_csv})
-    if ret != 0:
+    # Dump the report as CSV file
+    return_value = fiobenchreporter.report_to_csv({'report_csv': report_csv})
+    if return_value:
         exit(1)
 
     exit(0)
 
 
-if __name__ == '__main__':
+@click.command()
+@click.option(
+    '--base_csv',
+    type=click.Path(exists=True),
+    help='Specify the CSV file of the base samples.')
+@click.option(
+    '--test_csv',
+    type=click.Path(exists=True),
+    help='Specify the CSV file of the test samples.')
+@click.option(
+    '--report_csv',
+    type=click.Path(),
+    help='Specify the CSV file to store the benchmark report.')
+def cli(base_csv, test_csv, report_csv):
+    """Command Line Interface."""
+    # Parse and check the parameters
+    if not base_csv or not test_csv or not report_csv:
+        print '[ERROR] Missing parameter, use "--help" to check the usage.'
+        exit(1)
 
-    generate_fio_benchmark_report()
+    # Generate FIO benchmark report
+    generate_fio_benchmark_report(base_csv, test_csv, report_csv)
+
+
+if __name__ == '__main__':
+    cli()
