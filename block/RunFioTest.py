@@ -19,6 +19,7 @@ v0.2    2018-08-03  charles.shih  Implement Class RunFioTest.
 v0.3    2018-08-07  charles.shih  Finish the logic of log handling.
 v0.4    2018-08-07  charles.shih  Add logic to handling CLI.
 v1.0    2018-08-08  charles.shih  Init version.
+v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 """
 
 import os
@@ -81,109 +82,109 @@ class FioTestRunner:
 
         """
         if 'backend' not in params:
-            print 'ERROR: Missing required params: params[backend]'
+            print '[ERROR] Missing required params: params[backend]'
             exit(1)
         elif not isinstance(params['backend'], (unicode, str)):
-            print 'ERROR: params[backend] must be string.'
+            print '[ERROR] params[backend] must be string.'
             exit(1)
         else:
             self.backend = params['backend']
 
         if 'driver' not in params:
-            print 'ERROR: Missing required params: params[driver]'
+            print '[ERROR] Missing required params: params[driver]'
             exit(1)
         elif not isinstance(params['driver'], (unicode, str)):
-            print 'ERROR: params[driver] must be string.'
+            print '[ERROR] params[driver] must be string.'
             exit(1)
         else:
             self.driver = params['driver']
 
         if 'fs' not in params:
-            print 'ERROR: Missing required params: params[fs]'
+            print '[ERROR] Missing required params: params[fs]'
             exit(1)
         elif not isinstance(params['fs'], (unicode, str)):
-            print 'ERROR: params[fs] must be string.'
+            print '[ERROR] params[fs] must be string.'
             exit(1)
         else:
             self.fs = params['fs']
 
         if 'rounds' not in params:
-            print 'ERROR: Missing required params: params[rounds]'
+            print '[ERROR] Missing required params: params[rounds]'
             exit(1)
         elif not isinstance(params['rounds'], int) or params['rounds'] < 1:
-            print 'ERROR: params[rounds] must be an integer >= 1.'
+            print '[ERROR] params[rounds] must be an integer >= 1.'
             exit(1)
         else:
             self.rounds = params['rounds']
 
         if 'filename' not in params:
-            print 'ERROR: Missing required params: params[filename]'
+            print '[ERROR] Missing required params: params[filename]'
             exit(1)
         elif not isinstance(params['filename'], (unicode, str)):
-            print 'ERROR: params[filename] must be string.'
+            print '[ERROR] params[filename] must be string.'
             exit(1)
         else:
             self.filename = params['filename']
 
         if 'runtime' not in params:
-            print 'ERROR: Missing required params: params[runtime]'
+            print '[ERROR] Missing required params: params[runtime]'
             exit(1)
         elif not isinstance(params['runtime'], (unicode, str)):
-            print 'ERROR: params[runtime] must be string.'
+            print '[ERROR] params[runtime] must be string.'
             exit(1)
         else:
             self.runtime = params['runtime']
 
         if 'direct' not in params:
-            print 'ERROR: Missing required params: params[direct]'
+            print '[ERROR] Missing required params: params[direct]'
             exit(1)
         elif not params['direct'] in (0, 1):
-            print 'ERROR: params[direct] must be integer 0 or 1.'
+            print '[ERROR] params[direct] must be integer 0 or 1.'
             exit(1)
         else:
             self.direct = params['direct']
 
         if 'numjobs' not in params:
-            print 'ERROR: Missing required params: params[numjobs]'
+            print '[ERROR] Missing required params: params[numjobs]'
             exit(1)
         elif not isinstance(params['numjobs'], int):
-            print 'ERROR: params[numjobs] must be an integer.'
+            print '[ERROR] params[numjobs] must be an integer.'
             exit(1)
         else:
             self.numjobs = params['numjobs']
 
         if 'rw_list' not in params:
-            print 'ERROR: Missing required params: params[rw_list]'
+            print '[ERROR] Missing required params: params[rw_list]'
             exit(1)
         elif not isinstance(params['rw_list'], (list, tuple)):
-            print 'ERROR: params[rw_list] must be a list or tuple.'
+            print '[ERROR] params[rw_list] must be a list or tuple.'
             exit(1)
         else:
             self.rw_list = params['rw_list']
 
         if 'bs_list' not in params:
-            print 'ERROR: Missing required params: params[bs_list]'
+            print '[ERROR] Missing required params: params[bs_list]'
             exit(1)
         elif not isinstance(params['bs_list'], (list, tuple)):
-            print 'ERROR: params[bs_list] must be a list or tuple.'
+            print '[ERROR] params[bs_list] must be a list or tuple.'
             exit(1)
         else:
             self.bs_list = params['bs_list']
 
         if 'iodepth_list' not in params:
-            print 'ERROR: Missing required params: params[iodepth_list]'
+            print '[ERROR] Missing required params: params[iodepth_list]'
             exit(1)
         elif not isinstance(params['iodepth_list'], (list, tuple)):
-            print 'ERROR: params[iodepth_list] must be a list or tuple.'
+            print '[ERROR] params[iodepth_list] must be a list or tuple.'
             exit(1)
         else:
             self.iodepth_list = params['iodepth_list']
 
         if 'log_path' not in params:
-            print 'ERROR: Missing required params: params[log_path]'
+            print '[ERROR] Missing required params: params[log_path]'
             exit(1)
         elif not isinstance(params['log_path'], (unicode, str)):
-            print 'ERROR: params[log_path] must be string.'
+            print '[ERROR] params[log_path] must be string.'
             exit(1)
         else:
             self.log_path = params['log_path']
@@ -308,8 +309,7 @@ def get_yaml_params():
             yaml_params = yaml_dict['FioTestRunner']
 
     except Exception as err:
-        print 'WARNING: Fail to get default value from virt_perf_scripts.yaml'
-        print err
+        print '[WARNING] Fail to get default value from yaml file. %s' % err
 
     return yaml_params
 
