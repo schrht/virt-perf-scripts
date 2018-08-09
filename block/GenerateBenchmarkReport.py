@@ -2,7 +2,8 @@
 """Generate FIO Benchmark Report.
 
 History:
-v1.0    2018-03-16  cheshi  Finish all the functions.
+v1.0    2018-03-16  charles.shih  Finish all the functions.
+v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 """
 
 import click
@@ -57,26 +58,26 @@ class FioBenchmarkReporter():
         """
         # Parse required params
         if 'base_csv' not in params:
-            print 'Missing required params: params[base_csv]'
+            print '[ERROR] Missing required params: params[base_csv]'
             return 1
 
         if 'test_csv' not in params:
-            print 'Missing required params: params[test_csv]'
+            print '[ERROR] Missing required params: params[test_csv]'
             return 1
 
         try:
             # Load base samples from CSV file
-            print 'Reading base samples from csv file "%s"...' % params[
+            print '[NOTE] Reading base samples from csv file "%s"...' % params[
                 'base_csv']
             self.df_base = pd.read_csv(params['base_csv'])
 
             # Load test samples from CSV file
-            print 'Reading test samples from csv file "%s"...' % params[
+            print '[NOTE] Reading test samples from csv file "%s"...' % params[
                 'test_csv']
             self.df_test = pd.read_csv(params['test_csv'])
 
         except Exception, err:
-            print 'Error while reading from csv file: %s' % err
+            print '[ERROR] Error while reading from csv file: %s' % err
             return 1
 
         return 0
@@ -321,19 +322,20 @@ class FioBenchmarkReporter():
         """
         # Parse required params
         if 'report_csv' not in params:
-            print 'Missing required params: params[report_csv]'
+            print '[ERROR] Missing required params: params[report_csv]'
             return 1
 
         # Write the report to the csv file
         try:
-            print 'Dumping data into csv file "%s"...' % params['report_csv']
+            print '[NOTE] Dumping data into csv file "%s"...' % params[
+                'report_csv']
             content = self.df_report.to_csv()
             with open(params['report_csv'], 'w') as f:
                 f.write(content)
-            print 'Finished!'
+            print '[NOTE] Finished!'
 
         except Exception, err:
-            print 'Error while dumping to csv file: %s' % err
+            print '[ERROR] Error while dumping to csv file: %s' % err
             return 1
 
         return 0
