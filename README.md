@@ -10,12 +10,16 @@ This tool is designed for running an FIO benchmark in guest.
 
 1. Install [`fio`](https://github.com/axboe/fio/releases) on the guest.
 
-2. Install the following Python modules on the guest via `pip install`:
+2. Install the following Python modules:
 - `click`
 - `pandas`
 - `numpy`
 - `scipy`
 - `yaml`
+
+> Notes:  
+> `yaml` can be installed by `yum install python-yaml`;  
+> Other modules can be install by `pip install <module-name>`.
 
 3. Deliver the following scripts to the guest:
 - `./block/RunFioTest.py`
