@@ -5,6 +5,7 @@ History:
 v1.0    2018-03-16  charles.shih  Finish all the functions.
 v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 v1.1    2018-08-09  charles.shih  Update the Command Line Interface.
+v1.2    2018-08-20  charles.shih  Support Python 3.
 """
 
 import click
@@ -59,26 +60,26 @@ class FioBenchmarkReporter():
         """
         # Parse required params
         if 'base_csv' not in params:
-            print '[ERROR] Missing required params: params[base_csv]'
+            print('[ERROR] Missing required params: params[base_csv]')
             return 1
 
         if 'test_csv' not in params:
-            print '[ERROR] Missing required params: params[test_csv]'
+            print('[ERROR] Missing required params: params[test_csv]')
             return 1
 
         try:
             # Load base samples from CSV file
-            print '[NOTE] Reading base samples from csv file "%s"...' % params[
-                'base_csv']
+            print('[NOTE] Reading base samples from csv file "%s"...' %
+                  params['base_csv'])
             self.df_base = pd.read_csv(params['base_csv'])
 
             # Load test samples from CSV file
-            print '[NOTE] Reading test samples from csv file "%s"...' % params[
-                'test_csv']
+            print('[NOTE] Reading test samples from csv file "%s"...' %
+                  params['test_csv'])
             self.df_test = pd.read_csv(params['test_csv'])
 
-        except Exception, err:
-            print '[ERROR] Error while reading from csv file: %s' % err
+        except Exception as err:
+            print('[ERROR] Error while reading from csv file: %s' % err)
             return 1
 
         return 0
@@ -267,7 +268,7 @@ class FioBenchmarkReporter():
                 series, my_sub_base, my_sub_test, 'Util', 'Util(%)', True)
 
             # Show current series
-            print series
+            print(series)
 
             # Save current series
             self.df_report.iloc[index] = series
@@ -323,20 +324,20 @@ class FioBenchmarkReporter():
         """
         # Parse required params
         if 'report_csv' not in params:
-            print '[ERROR] Missing required params: params[report_csv]'
+            print('[ERROR] Missing required params: params[report_csv]')
             return 1
 
         # Write the report to the csv file
         try:
-            print '[NOTE] Dumping data into csv file "%s"...' % params[
-                'report_csv']
+            print('[NOTE] Dumping data into csv file "%s"...' %
+                  params['report_csv'])
             content = self.df_report.to_csv()
             with open(params['report_csv'], 'w') as f:
                 f.write(content)
-            print '[NOTE] Finished!'
+            print('[NOTE] Finished!')
 
-        except Exception, err:
-            print '[ERROR] Error while dumping to csv file: %s' % err
+        except Exception as err:
+            print('[ERROR] Error while dumping to csv file: %s' % err)
             return 1
 
         return 0
@@ -382,7 +383,7 @@ def cli(base_csv, test_csv, report_csv):
     """Command Line Interface."""
     # Parse and check the parameters
     if not base_csv or not test_csv or not report_csv:
-        print '[ERROR] Missing parameter, use "--help" to check the usage.'
+        print('[ERROR] Missing parameter, use "--help" to check the usage.')
         exit(1)
 
     # Generate FIO benchmark report

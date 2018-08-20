@@ -21,6 +21,7 @@ v2.0.2  2018-03-23  charles.shih  Consider "Round" while sorting the DataFrame.
 v2.0.3  2018-08-08  charles.shih  Enhance the output messages.
 v2.1    2018-08-08  charles.shih  Update the Command Line Interface.
 v2.1.1  2018-08-09  charles.shih  Extract function byteify.
+v2.2    2018-08-20  charles.shih  Support Python 3.
 """
 
 import json
@@ -72,11 +73,11 @@ class FioTestReporter():
         if isinstance(inputs, dict):
             return {
                 self._byteify(key): self._byteify(value)
-                for key, value in inputs.iteritems()
+                for key, value in inputs.items()
             }
         elif isinstance(inputs, list):
             return [self._byteify(element) for element in inputs]
-        elif isinstance(inputs, unicode):
+        elif isinstance(inputs, str):
             return inputs.encode('utf-8')
         else:
             return inputs
@@ -106,7 +107,7 @@ class FioTestReporter():
         """
         # Parse required params
         if data_file == '':
-            print '[ERROR] Missing required params: data_file'
+            print('[ERROR] Missing required params: data_file')
             return (1, None)
 
         # Get the offsets of the first json block
@@ -126,14 +127,14 @@ class FioTestReporter():
                     end = num
                     break
                 num += 1
-        except Exception, err:
-            print '[ERROR] Error while handling fio log file: %s' % err
+        except Exception as err:
+            print('[ERROR] Error while handling fio log file: %s' % err)
             return (1, None)
 
         # Extract the json block into a new file and get the raw_data
         if begin >= end:
-            print '[ERROR] Cannot found validate json block in file: %s\
-' % data_file
+            print('[ERROR] Cannot found validate json block in file: %s' %
+                  data_file)
             return (1, None)
 
         try:
@@ -142,8 +143,8 @@ class FioTestReporter():
             with open(data_file + '.json', 'r') as json_file:
                 json_data = json.load(json_file)
                 raw_data = self._byteify(json_data)
-        except Exception, err:
-            print '[ERROR] Error while handling the new json file: %s' % err
+        except Exception as err:
+            print('[ERROR] Error while handling the new json file: %s' % err)
             return (1, None)
 
         os.unlink(data_file + '.json')
@@ -169,7 +170,7 @@ class FioTestReporter():
         """
         # Parse required params
         if 'result_path' not in params:
-            print '[ERROR] Missing required params: params[result_path]'
+            print('[ERROR] Missing required params: params[result_path]')
             return 1
 
         # load raw data from files
@@ -207,7 +208,7 @@ class FioTestReporter():
         """
         # Parse required params
         if raw_data == '':
-            print '[ERROR] Missing required params: raw_data'
+            print('[ERROR] Missing required params: raw_data')
             return (1, None)
 
         # Get the performance KPIs
@@ -240,16 +241,16 @@ class FioTestReporter():
             if len(raw_data['disk_util']) == 1:
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
             else:
-                print '[ERROR] Error while parsing disk_util: length != 1'
+                print('[ERROR] Error while parsing disk_util: length != 1')
                 perf_kpi['util'] = 'NaN'
 
             # Get additional information
             try:
                 dict = eval(raw_data['jobs'][0]['job options']['description'])
                 perf_kpi.update(dict)
-            except Exception, err:
-                print '[ERROR] Error while parsing additional information: %s\
-' % err
+            except Exception as err:
+                print('[ERROR] Error while parsing additional information: %s'
+                      % err)
 
             if 'driver' not in perf_kpi:
                 perf_kpi['driver'] = 'NaN'
@@ -260,8 +261,8 @@ class FioTestReporter():
             if 'backend' not in perf_kpi:
                 perf_kpi['backend'] = 'NaN'
 
-        except Exception, err:
-            print '[ERROR] Error while extracting performance KPIs: %s' % err
+        except Exception as err:
+            print('[ERROR] Error while extracting performance KPIs: %s' % err)
             return (1, None)
 
         return (0, perf_kpi)
@@ -402,20 +403,20 @@ class FioTestReporter():
         """
         # Parse required params
         if 'report_csv' not in params:
-            print '[ERROR] Missing required params: params[report_csv]'
+            print('[ERROR] Missing required params: params[report_csv]')
             return 1
 
         # Write the report to the csv file
         try:
-            print '[NOTE] Dumping data into csv file "%s"...' % params[
-                'report_csv']
+            print('[NOTE] Dumping data into csv file "%s"...' %
+                  params['report_csv'])
             content = self.df_report.to_csv()
             with open(params['report_csv'], 'w') as f:
                 f.write(content)
-            print 'Finished!'
+            print('[NOTE] Finished!')
 
-        except Exception, err:
-            print '[ERROR] Error while dumping to csv file: %s' % err
+        except Exception as err:
+            print('[ERROR] Error while dumping to csv file: %s' % err)
             return 1
 
         return 0
@@ -464,11 +465,11 @@ def cli(result_path, report_csv):
     """Command Line Interface."""
     # Parse and check the parameters
     if not result_path:
-        print '[ERROR] Missing parameter, use "--help" to check the usage.'
+        print('[ERROR] Missing parameter, use "--help" to check the usage.')
         exit(1)
     if not report_csv:
-        print '[WARNING] No CSV file name (--report_csv) was specified. Will \
-use "%s/fio_report.csv" instead.' % result_path
+        print('[WARNING] No CSV file name (--report_csv) was specified. Will \
+use "%s/fio_report.csv" instead.' % result_path)
         report_csv = result_path + os.sep + 'fio_report.csv'
 
     # Generate FIO test report

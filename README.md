@@ -18,7 +18,7 @@ This tool is designed for running an FIO benchmark in guest.
 - `yaml`
 
 > Notes:  
-> `yaml` can be installed by `yum install python-yaml`;  
+> `yaml` can be installed with `python-yaml` or `python3-yaml` package via `yum`;
 > Other modules can be install by `pip install <module-name>`.
 
 3. Deliver the following scripts to the guest:
