@@ -21,6 +21,7 @@ v0.4    2018-08-07  charles.shih  Add logic to handling CLI.
 v1.0    2018-08-08  charles.shih  Init version.
 v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 v1.1    2018-08-20  charles.shih  Support Python 3.
+v1.2    2018-08-23  charles.shih  Fix string adjustment issue in Python 2.
 """
 
 import os
@@ -85,7 +86,7 @@ class FioTestRunner:
         if 'backend' not in params:
             print('[ERROR] Missing required params: params[backend]')
             exit(1)
-        elif not isinstance(params['backend'], str):
+        elif type(params['backend']) not in (type(u''), type(b'')):
             print('[ERROR] params[backend] must be string.')
             exit(1)
         else:
@@ -94,7 +95,7 @@ class FioTestRunner:
         if 'driver' not in params:
             print('[ERROR] Missing required params: params[driver]')
             exit(1)
-        elif not isinstance(params['driver'], str):
+        elif type(params['driver']) not in (type(u''), type(b'')):
             print('[ERROR] params[driver] must be string.')
             exit(1)
         else:
@@ -103,7 +104,7 @@ class FioTestRunner:
         if 'fs' not in params:
             print('[ERROR] Missing required params: params[fs]')
             exit(1)
-        elif not isinstance(params['fs'], str):
+        elif type(params['fs']) not in (type(u''), type(b'')):
             print('[ERROR] params[fs] must be string.')
             exit(1)
         else:
@@ -121,7 +122,7 @@ class FioTestRunner:
         if 'filename' not in params:
             print('[ERROR] Missing required params: params[filename]')
             exit(1)
-        elif not isinstance(params['filename'], str):
+        elif type(params['filename']) not in (type(u''), type(b'')):
             print('[ERROR] params[filename] must be string.')
             exit(1)
         else:
@@ -130,7 +131,7 @@ class FioTestRunner:
         if 'runtime' not in params:
             print('[ERROR] Missing required params: params[runtime]')
             exit(1)
-        elif not isinstance(params['runtime'], str):
+        elif type(params['runtime']) not in (type(u''), type(b'')):
             print('[ERROR] params[runtime] must be string.')
             exit(1)
         else:
@@ -184,7 +185,7 @@ class FioTestRunner:
         if 'log_path' not in params:
             print('[ERROR] Missing required params: params[log_path]')
             exit(1)
-        elif not isinstance(params['log_path'], str):
+        elif type(params['log_path']) not in (type(u''), type(b'')):
             print('[ERROR] params[log_path] must be string.')
             exit(1)
         else:
