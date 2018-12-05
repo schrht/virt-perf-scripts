@@ -19,7 +19,6 @@ v0.3    2018-11-14  boyang  Optimize process of tools required check and install
 v0.4    2018-11-17  boyang  Update from init format to yaml
 v1.0    2018-11-26  boyang  Update click to display usage
 v1.1    2018-11-29  boyang  Remove process of tools required check and installation
-v1.2    2018-12-03  boyang  Remove and mkdir log DIR when start new NETPERF test
 """
 
 
@@ -27,7 +26,6 @@ import os
 import time
 import yaml
 import click
-import shutil
 import itertools
 import subprocess
 from virt_netperf_pre_test import load_config
@@ -235,8 +233,8 @@ class NetperfTestRunner:
 
             # Check output log DIR
             output_path = os.path.expanduser(self.log_path)
-            shutil.rmtree(output_path)
-            os.makedirs(output_path)
+            if not os.path.exists(output_path):
+                os.makedirs(output_path)
 
             # Confirm Output log name
             output_file = 'netperf_%s_%s_%s_%s_%s_%s_.nplog' % (rd, driver, data_mode, m_size, instance, time.strftime('%Y%m%d%H%M%S', time.localtime()))

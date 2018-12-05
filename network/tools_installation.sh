@@ -72,7 +72,7 @@ function install_netperf()
 }    
 
 
-# Part 2. INSTALLATION of MPSTAT
+# Part 2. INSTALLATION of SYSSTAT
 function install_sysstat()
 {
     yum -y install sysstat
