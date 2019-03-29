@@ -22,6 +22,7 @@ v2.0.3  2018-08-08  charles.shih  Enhance the output messages.
 v2.1    2018-08-08  charles.shih  Update the Command Line Interface.
 v2.1.1  2018-08-09  charles.shih  Extract function byteify.
 v2.2    2018-08-20  charles.shih  Support Python 3.
+v2.2.1  2019-03-27  charles.shih  Prevent string converting for Python 3.
 """
 
 import json
@@ -142,7 +143,13 @@ class FioTestReporter():
                 json_file.writelines(file_content[begin:end + 1])
             with open(data_file + '.json', 'r') as json_file:
                 json_data = json.load(json_file)
-                raw_data = self._byteify(json_data)
+                if '' == b'':
+                    # Convert to byteify for Python 2
+                    raw_data = self._byteify(json_data)
+                else:
+                    # Keep strings for Python 3
+                    raw_data = json_data
+
         except Exception as err:
             print('[ERROR] Error while handling the new json file: %s' % err)
             return (1, None)
