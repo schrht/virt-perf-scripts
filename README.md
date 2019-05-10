@@ -10,7 +10,7 @@ This tool is designed for running an FIO benchmark in guest.
 
 1. Install [`fio`](https://github.com/axboe/fio/releases) on the guest.
 
-`sudo yum install -y fio`
+> `sudo yum install -y fio`
 
 2. Install the following Python modules:
 - `click`
@@ -23,20 +23,17 @@ This tool is designed for running an FIO benchmark in guest.
 > `yaml` can be installed with `python-yaml` or `python3-yaml` package via `yum`;
 > Other modules can be install by `pip install <module-name>`.
 
-### On RHEL7
-
-```
-sudo yum install -y python python-yaml
-sudo pip install click pandas numpy scipy
-```
-
-### On RHEL8
-
-```
-sudo yum install -y python3 python3-yaml
-sudo ln -s /usr/bin/python3 /usr/bin/python
-sudo pip3 install click pandas numpy scipy
-```
+> RHEL7:
+> ```
+> sudo yum install -y python python-yaml
+> sudo pip install click pandas numpy scipy
+> ```
+> RHEL8:
+> ```
+> sudo yum install -y python3 python3-yaml
+> sudo ln -s /usr/bin/python3 /usr/bin/python
+> sudo pip3 install click pandas numpy scipy
+> ```
 
 3. Deliver the following scripts to the guest:
 - `./block/RunFioTest.py`
