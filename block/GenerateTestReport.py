@@ -23,6 +23,8 @@ v2.1    2018-08-08  charles.shih  Update the Command Line Interface.
 v2.1.1  2018-08-09  charles.shih  Extract function byteify.
 v2.2    2018-08-20  charles.shih  Support Python 3.
 v2.2.1  2019-03-27  charles.shih  Prevent string converting for Python 3.
+v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
+                                  multiple disks involved.
 """
 
 import json
@@ -248,8 +250,13 @@ class FioTestReporter():
             if len(raw_data['disk_util']) == 1:
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
             else:
-                print('[ERROR] Error while parsing disk_util: length != 1')
-                perf_kpi['util'] = 'NaN'
+                print('[WARNING] multiple disks involved, \
+                    set the lowest value as disk utilization.')
+                utils = [
+                    x['util'] for x in raw_data['disk_util']
+                    if ('aggr_util' not in x)
+                ]
+                perf_kpi['util'] = min(utils)
 
             # Get additional information
             try:
