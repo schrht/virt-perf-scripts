@@ -22,6 +22,7 @@ v1.0    2018-08-08  charles.shih  Init version.
 v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 v1.1    2018-08-20  charles.shih  Support Python 3.
 v1.2    2018-08-23  charles.shih  Fix string adjustment issue in Python 2.
+v1.2.1  2019-05-13  charles.shih  Support testing against multiple targets.
 """
 
 import os
@@ -344,7 +345,8 @@ def run_fio_test(params={}):
     help='How many rounds the fio test will be repeated.')
 @click.option(
     '--filename',
-    help='[FIO] The disk or specified file(s) to be tested by fio.')
+    help='[FIO] The disk(s) or specified file(s) to be tested by fio. You can \
+specify a number of targets by separating the names with a \':\' colon.')
 @click.option(
     '--runtime',
     help='[FIO] Terminate a job after the specified period of time.')
