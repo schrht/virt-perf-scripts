@@ -25,6 +25,7 @@ v2.2    2018-08-20  charles.shih  Support Python 3.
 v2.2.1  2019-03-27  charles.shih  Prevent string converting for Python 3.
 v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
                                   multiple disks involved.
+v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
 """
 
 import json
@@ -250,8 +251,8 @@ class FioTestReporter():
             if len(raw_data['disk_util']) == 1:
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
             else:
-                print('[WARNING] multiple disks involved, \
-                    set the lowest value as disk utilization.')
+                print('[WARNING] multiple disks involved, set the lowest \
+value as disk utilization.')
                 utils = [
                     x['util'] for x in raw_data['disk_util']
                     if ('aggr_util' not in x)
