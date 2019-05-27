@@ -1,0 +1,6 @@
+#######
+  0. setup DIR. Guide how to prepare VMs and setup ENV automatically
+
+  1. Run controller.sh in VM1(controller) will setup ENV in VM2(clinet) and VM3(server)
+
+  2. Run "virt_netperf_test.py $VM3_IP" in VM2 to start netperf test
