@@ -23,6 +23,8 @@ v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 v1.1    2018-08-20  charles.shih  Support Python 3.
 v1.2    2018-08-23  charles.shih  Fix string adjustment issue in Python 2.
 v1.2.1  2019-05-13  charles.shih  Support testing against multiple targets.
+v1.2.2  2019-06-06  charles.shih  Fix a parameter parsing issue with the new
+                                  version of click module.
 """
 
 import os
@@ -64,7 +66,7 @@ class FioTestRunner:
                     [FIO] The disk or specified file(s) to be tested by fio.
                 runtime: str
                     [FIO] Terminate a job after the specified period of time.
-                direct: str
+                direct: int
                     [FIO] Direct access to the disk.
                     Example: '0' (using cache), '1' (direct access).
                 numjobs: int
@@ -375,7 +377,7 @@ def cli(backend, driver, fs, rounds, filename, runtime, direct, numjobs,
     """
     # Read user specified parameters from CLI
     cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
-                                direct, numjobs, rw_list, bs_list,
+                                int(direct), numjobs, rw_list, bs_list,
                                 iodepth_list, log_path)
 
     # Read user configuration from yaml file
