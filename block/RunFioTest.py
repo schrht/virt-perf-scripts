@@ -25,6 +25,7 @@ v1.2    2018-08-23  charles.shih  Fix string adjustment issue in Python 2.
 v1.2.1  2019-05-13  charles.shih  Support testing against multiple targets.
 v1.2.2  2019-06-06  charles.shih  Fix a parameter parsing issue with the new
                                   version of click module.
+v1.2.3  2019-07-03  charles.shih  Fix the last issue with a better solution.
 """
 
 import os
@@ -354,7 +355,8 @@ specify a number of targets by separating the names with a \':\' colon.')
     help='[FIO] Terminate a job after the specified period of time.')
 @click.option(
     '--direct',
-    type=click.Choice(['0', '1']),
+    type=click.IntRange(0, 1),
+    default=1,
     help='[FIO] Direct access to the disk.')
 @click.option(
     '--numjobs',
@@ -377,7 +379,7 @@ def cli(backend, driver, fs, rounds, filename, runtime, direct, numjobs,
     """
     # Read user specified parameters from CLI
     cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
-                                int(direct), numjobs, rw_list, bs_list,
+                                direct, numjobs, rw_list, bs_list,
                                 iodepth_list, log_path)
 
     # Read user configuration from yaml file
