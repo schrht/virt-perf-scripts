@@ -26,6 +26,7 @@ v1.2.1  2019-05-13  charles.shih  Support testing against multiple targets.
 v1.2.2  2019-06-06  charles.shih  Fix a parameter parsing issue with the new
                                   version of click module.
 v1.2.3  2019-07-03  charles.shih  Fix the last issue with a better solution.
+v1.3    2019-07-09  charles.shih  Drop the caches before each fio test.
 """
 
 import os
@@ -269,6 +270,9 @@ class FioTestRunner:
                                                      time.localtime()))
             print('Test Command: %s' % command)
             print('-' * 50)
+
+            # Drop the caches and run fio
+            os.system('sync; echo 3 > /proc/sys/vm/drop_caches')
             os.system(command)
 
 
