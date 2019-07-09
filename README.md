@@ -134,6 +134,32 @@ $ ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test
 
 This command will create a CSV benchmark report which comparing RHEL7.6 performance KPIs against RHEL7.5.
 
+### About the index and conclusion
+
+The conclusion can be the following values in specific situations:
+
+Conclusion              Situation
+Data Invalid            The input data is invalid;
+Variance Too Large      The %SD beyonds the MAX_PCT_DEV;
+No Difference           The %DIFF is zero;
+No Significance         The Significance less than CONFIDENCE_THRESHOLD;
+Major Improvement       The Significance beyonds CONFIDENCE_THRESHOLD and %DIFF beyonds REGRESSION_THRESHOLD;
+Major Regression        The Significance beyonds CONFIDENCE_THRESHOLD and %DIFF beyonds REGRESSION_THRESHOLD;
+Minor Improvement       The Significance beyonds CONFIDENCE_THRESHOLD but %DIFF belows REGRESSION_THRESHOLD;
+Minor Regression        The Significance beyonds CONFIDENCE_THRESHOLD but %DIFF belows REGRESSION_THRESHOLD;
+
+MAX_PCT_DEV = 10
+REGRESSION_THRESHOLD = 5
+CONFIDENCE_THRESHOLD = 0.95
+
+Calculation:
+```
+AVG = SUM(the performance number of sample 1~5) / 5
+%SD = (The Standard Deviation of the 5 samples) / AVG * 100%
+%DIFF = (TEST-AVG - BASE-AVG) / BASE-AVG * 100%
+Significance = (1 - TTEST(BASE Sample 1~5, TEST Sample 1~5))
+```
+
 ## Paste the results into Google Speardsheets
 
 You can copy & paste the contents from CSV file into the [Template of Google Speardsheets](https://docs.google.com/spreadsheets/d/1C5DsB5oWXI0Wl5rGiCLQI09w2nbq96uovPYoF6rvM6Y/edit?usp=sharing). So that you could check the benchmark results much more conveniently.
