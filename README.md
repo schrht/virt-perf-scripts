@@ -162,4 +162,4 @@ Significance = (1 - TTEST(BASE Sample 1~5, TEST Sample 1~5))
 
 ## Paste the results into Google Speardsheets
 
-You can copy & paste the contents from CSV file into the [Template of Google Speardsheets](https://docs.google.com/spreadsheets/d/1C5DsB5oWXI0Wl5rGiCLQI09w2nbq96uovPYoF6rvM6Y/edit?usp=sharing). So that you could check the benchmark results much more conveniently.
+You can copy & paste the contents from CSV file into the [Template of Google Speardsheets](https://drive.google.com/open?id=1cdz1m8dPNoaH-dkOAxSbhvg-fFIdY7hh). So that you could check the benchmark results much more conveniently.
