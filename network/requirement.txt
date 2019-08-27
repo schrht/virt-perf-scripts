@@ -8,5 +8,3 @@ The nplog and nplog.info file should be corresponding (have the same file name).
 
 boyang@ will create the test scripts for netperf.
 cheshi@ will create the analyse tool for the test results.
-
-
