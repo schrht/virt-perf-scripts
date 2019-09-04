@@ -249,12 +249,14 @@ class NetperfTestRunner:
         kill = subprocess.Popen(["ssh", "-i", configs["ssh_key"], "-o", "StrictHostKeyChecking=no", "root@" + rmt_ip, "pkill -9 netserver"],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         err_kill = kill.stderr.read().strip()
+        print("DEBUG: err_kill", err_kill)
 
         # Start netserver service in remote VM
         print("INFO: Run netserver in the remote VM")
-        run = subprocess.Popen(["ssh", "-i", configs["ssh_key"], "root@" + rmt_ip, "netserver"],
+        run = subprocess.Popen(["ssh", "-i", configs["ssh_key"], "-o", "StrictHostKeyChecking=no", "root@" + rmt_ip, "netserver"],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         err_run = run.stderr.read().strip()
+        print("DEBUG: err_run", err_run)
 
         # Check result of run
         if len(err_kill) != 0 or len(err_run) != 0:
