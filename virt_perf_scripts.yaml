@@ -5,12 +5,13 @@ FioTestRunner:
   fs: NaN
   rounds: 5
   filename: /dev/xvdf
-  runtime: 1m
+  runtime: 2m
   direct: 1
   numjobs: 16  
   rw_list:
     - read
     - write
+    - rw
     - randread
     - randwrite
     - randrw
@@ -19,7 +20,9 @@ FioTestRunner:
     - 16k
     - 64k
     - 256k
+    - 1024k
   iodepth_list: 
     - 1
     - 8
     - 64
+    - 256
