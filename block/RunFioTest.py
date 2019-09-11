@@ -27,6 +27,7 @@ v1.2.2  2019-06-06  charles.shih  Fix a parameter parsing issue with the new
                                   version of click module.
 v1.2.3  2019-07-03  charles.shih  Fix the last issue with a better solution.
 v1.3    2019-07-09  charles.shih  Drop the caches before each fio test.
+v1.3.1  2019-09-11  charles.shih  Change disk size for the testing.
 """
 
 import os
@@ -242,7 +243,7 @@ class FioTestRunner:
             command = 'fio'
             command += ' --name=%s' % output_file
             command += ' --filename=%s' % self.filename
-            command += ' --size=512M'
+            command += ' --size=80G'
             command += ' --direct=%s' % self.direct
             command += ' --rw=%s' % rw
             command += ' --bs=%s' % bs
