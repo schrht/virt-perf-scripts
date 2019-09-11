@@ -26,6 +26,7 @@ v2.2.1  2019-03-27  charles.shih  Prevent string converting for Python 3.
 v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
                                   multiple disks involved.
 v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
+v2.4    2019-07-29  charles.shih  Collect 90% complete latency number.
 """
 
 import json
@@ -247,6 +248,13 @@ class FioTestReporter():
                 'mean'] / 1000000.0
             perf_kpi['lat'] = perf_kpi['r-lat'] + perf_kpi['w-lat']
 
+            # The unit of "clat" was "ns", convert to "ms"
+            perf_kpi['r-clat90'] = raw_data['jobs'][0]['read']['clat_ns'][
+                'percentile']['90.000000'] / 1000000.0
+            perf_kpi['w-clat90'] = raw_data['jobs'][0]['write']['clat_ns'][
+                'percentile']['90.000000'] / 1000000.0
+            perf_kpi['clat90'] = perf_kpi['r-clat90'] + perf_kpi['w-clat90']
+
             # Get util% of the disk
             if len(raw_data['disk_util']) == 1:
                 perf_kpi['util'] = raw_data['disk_util'][0]['util']
@@ -331,7 +339,7 @@ value as disk utilization.')
             self.perf_kpi_list,
             columns=[
                 'backend', 'driver', 'format', 'rw', 'bs', 'iodepth',
-                'numjobs', 'round', 'bw', 'iops', 'lat', 'util'
+                'numjobs', 'round', 'bw', 'iops', 'lat', 'clat90', 'util'
             ])
 
         # Rename the columns of the report DataFrame
@@ -348,6 +356,7 @@ value as disk utilization.')
                 'bw': 'BW(MiB/s)',
                 'iops': 'IOPS',
                 'lat': 'LAT(ms)',
+                'clat90': 'CLAT90(ms)',
                 'util': 'Util(%)'
             },
             inplace=True)
