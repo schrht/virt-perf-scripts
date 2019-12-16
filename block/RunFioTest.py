@@ -29,6 +29,7 @@ v1.2.3  2019-07-03  charles.shih  Fix the last issue with a better solution.
 v1.3    2019-07-09  charles.shih  Drop the caches before each fio test.
 v1.3.1  2019-09-11  charles.shih  Change disk size for the testing.
 v1.4    2019-12-16  charles.shih  Support specifying an ioengine for the tests.
+v1.4.1  2019-12-16  charles.shih  Bugfix for the ioengine support.
 """
 
 import os
@@ -218,7 +219,6 @@ class FioTestRunner:
 
         It will do Cartesian product with the following itmes:
         - self.rounds
-        - self.ioengine
         - self.bs_list
         - self.iodepth_list
         - self.rw_list          (Most often changing)
@@ -227,19 +227,18 @@ class FioTestRunner:
             None
 
         Returns:
-            The iterator of fio test parameters in (round, ioengine, bs, iodepth, rw).
+            The iterator of fio test parameters in (round, bs, iodepth, rw).
 
         """
         return itertools.product(
-            list(range(1, self.rounds + 1)
-                 ), self.ioengine, self.bs_list, self.iodepth_list,
+            list(range(1, self.rounds + 1)), self.bs_list, self.iodepth_list,
             self.rw_list)
 
     def run_tests(self):
         """Split and run all the sub-cases."""
         fio_params = self._split_fio_tests()
         for fio_param in fio_params:
-            (rd, ioengine, bs, iodepth, rw) = fio_param
+            (rd, bs, iodepth, rw) = fio_param
 
             # Set log file
             output_path = os.path.expanduser(self.log_path)
@@ -247,7 +246,7 @@ class FioTestRunner:
                 os.makedirs(output_path)
 
             output_file = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s.fiolog' % (
-                self.backend, self.driver, self.fs, ioengine, rw, bs, iodepth,
+                self.backend, self.driver, self.fs, self.ioengine, rw, bs, iodepth,
                 self.numjobs, rd,
                 time.strftime('%Y%m%d%H%M%S', time.localtime()))
 
@@ -258,10 +257,10 @@ class FioTestRunner:
             command += ' --name=%s' % output_file
             command += ' --filename=%s' % self.filename
             command += ' --size=80G'
+            command += ' --ioengine=%s' % self.ioengine
             command += ' --direct=%s' % self.direct
             command += ' --rw=%s' % rw
             command += ' --bs=%s' % bs
-            command += ' --ioengine=%s' % ioengine
             command += ' --iodepth=%s' % iodepth
             command += ' --numjobs=%s' % self.numjobs
             command += ' --time_based'
