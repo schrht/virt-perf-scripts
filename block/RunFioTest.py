@@ -28,6 +28,7 @@ v1.2.2  2019-06-06  charles.shih  Fix a parameter parsing issue with the new
 v1.2.3  2019-07-03  charles.shih  Fix the last issue with a better solution.
 v1.3    2019-07-09  charles.shih  Drop the caches before each fio test.
 v1.3.1  2019-09-11  charles.shih  Change disk size for the testing.
+v1.4    2019-12-16  charles.shih  Support specifying an ioengine for the tests.
 """
 
 import os
@@ -69,6 +70,8 @@ class FioTestRunner:
                     [FIO] The disk or specified file(s) to be tested by fio.
                 runtime: str
                     [FIO] Terminate a job after the specified period of time.
+                ioengine: str
+                    [FIO] Defines how the job issues I/O to the file.
                 direct: int
                     [FIO] Direct access to the disk.
                     Example: '0' (using cache), '1' (direct access).
@@ -143,6 +146,15 @@ class FioTestRunner:
         else:
             self.runtime = params['runtime']
 
+        if 'ioengine' not in params:
+            print('[ERROR] Missing required params: params[ioengine]')
+            exit(1)
+        elif type(params['ioengine']) not in (type(u''), type(b'')):
+            print('[ERROR] params[ioengine] must be string.')
+            exit(1)
+        else:
+            self.ioengine = params['ioengine']
+
         if 'direct' not in params:
             print('[ERROR] Missing required params: params[direct]')
             exit(1)
@@ -206,6 +218,7 @@ class FioTestRunner:
 
         It will do Cartesian product with the following itmes:
         - self.rounds
+        - self.ioengine
         - self.bs_list
         - self.iodepth_list
         - self.rw_list          (Most often changing)
@@ -214,26 +227,27 @@ class FioTestRunner:
             None
 
         Returns:
-            The iterator of fio test parameters in (round, bs, iodepth, rw).
+            The iterator of fio test parameters in (round, ioengine, bs, iodepth, rw).
 
         """
         return itertools.product(
-            list(range(1, self.rounds + 1)), self.bs_list, self.iodepth_list,
+            list(range(1, self.rounds + 1)
+                 ), self.ioengine, self.bs_list, self.iodepth_list,
             self.rw_list)
 
     def run_tests(self):
         """Split and run all the sub-cases."""
         fio_params = self._split_fio_tests()
         for fio_param in fio_params:
-            (rd, bs, iodepth, rw) = fio_param
+            (rd, ioengine, bs, iodepth, rw) = fio_param
 
             # Set log file
             output_path = os.path.expanduser(self.log_path)
             if not os.path.exists(output_path):
                 os.makedirs(output_path)
 
-            output_file = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s.fiolog' % (
-                self.backend, self.driver, self.fs, rw, bs, iodepth,
+            output_file = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s.fiolog' % (
+                self.backend, self.driver, self.fs, ioengine, rw, bs, iodepth,
                 self.numjobs, rd,
                 time.strftime('%Y%m%d%H%M%S', time.localtime()))
 
@@ -247,7 +261,7 @@ class FioTestRunner:
             command += ' --direct=%s' % self.direct
             command += ' --rw=%s' % rw
             command += ' --bs=%s' % bs
-            command += ' --ioengine=libaio'
+            command += ' --ioengine=%s' % ioengine
             command += ' --iodepth=%s' % iodepth
             command += ' --numjobs=%s' % self.numjobs
             command += ' --time_based'
@@ -277,7 +291,7 @@ class FioTestRunner:
             os.system(command)
 
 
-def get_cli_params(backend, driver, fs, rounds, filename, runtime, direct,
+def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
                    numjobs, rw_list, bs_list, iodepth_list, log_path):
     """Get parameters from the CLI."""
     cli_params = {}
@@ -294,6 +308,8 @@ def get_cli_params(backend, driver, fs, rounds, filename, runtime, direct,
         cli_params['filename'] = filename
     if runtime:
         cli_params['runtime'] = runtime
+    if ioengine:
+        cli_params['ioengine'] = ioengine
     if direct:
         cli_params['direct'] = direct
     if numjobs:
@@ -359,6 +375,10 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--runtime',
     help='[FIO] Terminate a job after the specified period of time.')
 @click.option(
+    '--ioengine',
+    help='[FIO] Defines how the job issues I/O to the file. Such as: \'libaio\', \
+        \'io_uring\', etc.')
+@click.option(
     '--direct',
     type=click.IntRange(0, 1),
     default=1,
@@ -374,7 +394,7 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--iodepth_list',
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
-def cli(backend, driver, fs, rounds, filename, runtime, direct, numjobs,
+def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
         rw_list, bs_list, iodepth_list, log_path):
     """Command line interface.
 
@@ -384,7 +404,7 @@ def cli(backend, driver, fs, rounds, filename, runtime, direct, numjobs,
     """
     # Read user specified parameters from CLI
     cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
-                                direct, numjobs, rw_list, bs_list,
+                                ioengine, direct, numjobs, rw_list, bs_list,
                                 iodepth_list, log_path)
 
     # Read user configuration from yaml file
