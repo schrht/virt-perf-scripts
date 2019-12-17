@@ -30,6 +30,7 @@ v1.3    2019-07-09  charles.shih  Drop the caches before each fio test.
 v1.3.1  2019-09-11  charles.shih  Change disk size for the testing.
 v1.4    2019-12-16  charles.shih  Support specifying an ioengine for the tests.
 v1.4.1  2019-12-16  charles.shih  Bugfix for the ioengine support.
+v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
 """
 
 import os
@@ -274,6 +275,9 @@ class FioTestRunner:
             }
             command += ' --output-format=normal,json+'
             command += ' --output=%s' % output
+
+            # [Technical Preview] Collect CPU idleness
+            command += ' --idle-prof=percpu'
 
             # Parse options only, don't start any I/O
             # command += ' --parse-only'  # (comment this line for testing)
