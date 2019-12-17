@@ -31,6 +31,7 @@ v1.3.1  2019-09-11  charles.shih  Change disk size for the testing.
 v1.4    2019-12-16  charles.shih  Support specifying an ioengine for the tests.
 v1.4.1  2019-12-16  charles.shih  Bugfix for the ioengine support.
 v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
+v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
 """
 
 import os
@@ -299,31 +300,31 @@ def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, dir
     """Get parameters from the CLI."""
     cli_params = {}
 
-    if backend:
+    if backend != None:
         cli_params['backend'] = backend
-    if driver:
+    if driver != None:
         cli_params['driver'] = driver
-    if fs:
+    if fs != None:
         cli_params['fs'] = fs
-    if rounds:
+    if rounds != None:
         cli_params['rounds'] = int(rounds)
-    if filename:
+    if filename != None:
         cli_params['filename'] = filename
-    if runtime:
+    if runtime != None:
         cli_params['runtime'] = runtime
-    if ioengine:
+    if ioengine != None:
         cli_params['ioengine'] = ioengine
-    if direct:
+    if direct != None:
         cli_params['direct'] = direct
-    if numjobs:
+    if numjobs != None:
         cli_params['numjobs'] = numjobs
-    if rw_list:
+    if rw_list != None:
         cli_params['rw_list'] = rw_list.split(',')
-    if bs_list:
+    if bs_list != None:
         cli_params['bs_list'] = bs_list.split(',')
-    if iodepth_list:
+    if iodepth_list != None:
         cli_params['iodepth_list'] = iodepth_list.split(',')
-    if log_path:
+    if log_path != None:
         cli_params['log_path'] = log_path
 
     return cli_params
@@ -384,7 +385,6 @@ specify a number of targets by separating the names with a \':\' colon.')
 @click.option(
     '--direct',
     type=click.IntRange(0, 1),
-    default=1,
     help='[FIO] Direct access to the disk.')
 @click.option(
     '--numjobs',
