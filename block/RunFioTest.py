@@ -376,7 +376,7 @@ specify a number of targets by separating the names with a \':\' colon.')
 @click.option(
     '--ioengine',
     help='[FIO] Defines how the job issues I/O to the file. Such as: \'libaio\', \
-        \'io_uring\', etc.')
+\'io_uring\', etc.')
 @click.option(
     '--direct',
     type=click.IntRange(0, 1),
