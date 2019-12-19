@@ -140,7 +140,7 @@ This command will create a CSV benchmark report which comparing RHEL7.6 performa
 ### About the index and conclusion
 
 The conclusion can be the following values in specific situations:
-
+```
 Conclusion              Situation
 Data Invalid            The input data is invalid;
 Variance Too Large      The %SD beyonds the MAX_PCT_DEV;
@@ -154,6 +154,7 @@ Minor Regression        The Significance beyonds CONFIDENCE_THRESHOLD but %DIFF 
 MAX_PCT_DEV = 10
 REGRESSION_THRESHOLD = 5
 CONFIDENCE_THRESHOLD = 0.95
+```
 
 Calculation:
 ```
