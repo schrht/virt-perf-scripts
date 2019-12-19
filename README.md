@@ -20,20 +20,7 @@ This tool is designed for running an FIO benchmark in guest.
 - `yaml`
 
 > Notes:  
-> `yaml` can be installed with `python-yaml` or `python3-yaml` package via `yum`;
-> Other modules can be install by `pip install <module-name>`.
-
-> RHEL7:
-> ```
-> sudo yum install -y python python-yaml
-> sudo pip install click pandas numpy scipy
-> ```
-> RHEL8:
-> ```
-> sudo yum install -y python3 python3-yaml
-> sudo ln -s /usr/bin/python3 /usr/bin/python
-> sudo pip3 install click pandas numpy scipy
-> ```
+> You can use `./block/setup.sh` on RHEL systems.
 
 3. Deliver the following scripts to the guest:
 - `./block/RunFioTest.py`
@@ -46,7 +33,7 @@ This tool is designed for running an FIO benchmark in guest.
 The manual page of `RunFioTest.py`:
 
 ```
-$ ./RunFioTest.py --help
+$ python3 ./RunFioTest.py --help
 Usage: RunFioTest.py [OPTIONS]
 
   Command line interface.
@@ -83,7 +70,7 @@ If you run `./RunFioTest.py` without any parameter, it will load default value f
 Typically, you should run the following command to provide enough information:
 
 ```
-$ ./RunFioTest.py --backend NVME --driver SCSI --fs RAW --filename /dev/sdb --log_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809
+$ python3 ./RunFioTest.py --backend NVME --driver SCSI --fs RAW --filename /dev/sdb --log_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809
 ```
 
 This command will create `$HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809` and generate *.fiolog file for each subcase to this path.
@@ -93,7 +80,7 @@ This command will create `$HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809` and gen
 The manual page of `GenerateTestReport.py`:
 
 ```
-$ ./GenerateTestReport.py --help
+$ python3 ./GenerateTestReport.py --help
 Usage: GenerateTestReport.py [OPTIONS]
 
   Command Line Interface.
@@ -107,7 +94,7 @@ Options:
 Typically, you should run the following command:
 
 ```
-$ ./GenerateTestReport.py --result_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809 --report_csv ESXi_FIO_RHEL7u6_20180809.csv
+$ python3 ./GenerateTestReport.py --result_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809 --report_csv ESXi_FIO_RHEL7u6_20180809.csv
 ```
 
 This command will create a CSV test report with all the performance KPIs in.
@@ -117,7 +104,7 @@ This command will create a CSV test report with all the performance KPIs in.
 The manual page of `GenerateBenchmarkReport.py`:
 
 ```
-$ ./GenerateBenchmarkReport.py --help
+$ python3 ./GenerateBenchmarkReport.py --help
 Usage: GenerateBenchmarkReport.py [OPTIONS]
 
   Command Line Interface.
@@ -132,7 +119,7 @@ Options:
 Typically, you should run the following command:
 
 ```
-$ ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test_csv ./ESXi_FIO_RHEL7u6_20180809.csv --report_csv ESXi_FIO_Benchmark_RHEL7u6_against_RHEL7u5_20180809.csv
+$ python3 ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test_csv ./ESXi_FIO_RHEL7u6_20180809.csv --report_csv ESXi_FIO_Benchmark_RHEL7u6_against_RHEL7u5_20180809.csv
 ```
 
 This command will create a CSV benchmark report which comparing RHEL7.6 performance KPIs against RHEL7.5.
