@@ -32,6 +32,7 @@ v1.4    2019-12-16  charles.shih  Support specifying an ioengine for the tests.
 v1.4.1  2019-12-16  charles.shih  Bugfix for the ioengine support.
 v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
 v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
+v1.6    2019-12-19  charles.shih  Add the dry-run support.
 """
 
 import os
@@ -91,6 +92,8 @@ class FioTestRunner:
                     Example: '1, 8, 64'...
                 log_path: str
                     Where the *.fiolog files will be saved to.
+                dryrun: bool
+                    Print the commands that would be executed, but do not execute them.
         Returns:
             None
 
@@ -212,6 +215,14 @@ class FioTestRunner:
         else:
             self.log_path = params['log_path']
 
+        if 'dryrun' not in params:
+            self.dryrun = False
+        elif not isinstance(params['dryrun'], bool):
+            print('[ERROR] params[dryrun] must be bool.')
+            exit(1)
+        else:
+            self.dryrun = params['dryrun']
+
         return None
 
     def _split_fio_tests(self):
@@ -290,13 +301,14 @@ class FioTestRunner:
             print('Test Command: %s' % command)
             print('-' * 50)
 
-            # Drop the caches and run fio
-            os.system('sync; echo 3 > /proc/sys/vm/drop_caches')
-            os.system(command)
+            if self.dryrun == False:
+                # Drop the caches and run fio
+                os.system('sync; echo 3 > /proc/sys/vm/drop_caches')
+                os.system(command)
 
 
 def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
-                   numjobs, rw_list, bs_list, iodepth_list, log_path):
+                   numjobs, rw_list, bs_list, iodepth_list, log_path, dryrun):
     """Get parameters from the CLI."""
     cli_params = {}
 
@@ -326,6 +338,8 @@ def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, dir
         cli_params['iodepth_list'] = iodepth_list.split(',')
     if log_path != None:
         cli_params['log_path'] = log_path
+    if dryrun != None:
+        cli_params['dryrun'] = dryrun
 
     return cli_params
 
@@ -397,8 +411,10 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--iodepth_list',
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
+@click.option('--dryrun', is_flag=True ,help='Print the commands that would be \
+executed, but do not execute them.')
 def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
-        rw_list, bs_list, iodepth_list, log_path):
+        rw_list, bs_list, iodepth_list, log_path, dryrun):
     """Command line interface.
 
     Take arguments from CLI, load default parameters from yaml file.
@@ -408,7 +424,7 @@ def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjob
     # Read user specified parameters from CLI
     cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
                                 ioengine, direct, numjobs, rw_list, bs_list,
-                                iodepth_list, log_path)
+                                iodepth_list, log_path, dryrun)
 
     # Read user configuration from yaml file
     yaml_params = get_yaml_params()
