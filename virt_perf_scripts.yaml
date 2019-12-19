@@ -3,27 +3,16 @@ FioTestRunner:
   backend: NaN
   driver: NaN
   fs: NaN
-  rounds: 5
+  rounds: 2
   filename: /dev/xvdf
-  runtime: 2m
+  runtime: 1m
   ioengine: libaio
   direct: 1
-  numjobs: 16
+  numjobs: 1
   rw_list:
     - read
-    - write
-    - rw
     - randread
-    - randwrite
-    - randrw
-  bs_list: 
+  bs_list:
     - 4k
-    - 16k
-    - 64k
-    - 256k
-    - 1024k
-  iodepth_list: 
-    - 1
+  iodepth_list:
     - 8
-    - 64
-    - 256
