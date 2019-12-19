@@ -1,0 +1,28 @@
+FioTestRunner:
+  log_path: ./fio_result
+  backend: NaN
+  driver: NaN
+  fs: NaN
+  rounds: 5
+  filename: /dev/xvdf
+  runtime: 1m
+  direct: 1
+  numjobs: 16
+  rw_list:
+    - read
+    - write
+    - rw
+    - randread
+    - randwrite
+    - randrw
+  bs_list:
+    - 4k
+    - 16k
+    - 64k
+    - 256k
+    - 1024k
+  iodepth_list:
+    - 1
+    - 8
+    - 64
+    - 256
