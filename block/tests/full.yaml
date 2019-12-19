@@ -6,6 +6,7 @@ FioTestRunner:
   rounds: 5
   filename: /dev/xvdf
   runtime: 1m
+  ioengine: libaio
   direct: 1
   numjobs: 16
   rw_list:
