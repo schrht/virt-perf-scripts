@@ -51,7 +51,7 @@ Usage: RunFioTest.py [OPTIONS]
 
   Command line interface.
 
-  Take arguments from CLI, load default parameters from yaml fisle. Then
+  Take arguments from CLI, load default parameters from yaml file. Then
   initialize the fio test.
 
 Options:
@@ -60,11 +60,14 @@ Options:
   --fs TEXT                The filesystem of the disk to be tested, "RAW" for
                            no fs.
   --rounds INTEGER RANGE   How many rounds the fio test will be repeated.
-  --filename TEXT          [FIO] The disk or specified file(s) to be tested by
-                           fio.
+  --filename TEXT          [FIO] The disk(s) or specified file(s) to be tested
+                           by fio. You can specify a number of targets by
+                           separating the names with a ':' colon.
   --runtime TEXT           [FIO] Terminate a job after the specified period of
                            time.
-  --direct [0|1]           [FIO] Direct access to the disk.
+  --ioengine TEXT          [FIO] Defines how the job issues I/O to the file.
+                           Such as: 'libaio', 'io_uring', etc.
+  --direct INTEGER RANGE   [FIO] Direct access to the disk.
   --numjobs INTEGER RANGE  [FIO] Create the specified number of clones of the
                            job.
   --rw_list TEXT           [FIO] Type of I/O pattern.
