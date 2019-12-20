@@ -411,7 +411,7 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--iodepth_list',
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
-@click.option('--dryrun', is_flag=True ,help='Print the commands that would be \
+@click.option('--dryrun', is_flag=True, help='Print the commands that would be \
 executed, but do not execute them.')
 def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
         rw_list, bs_list, iodepth_list, log_path, dryrun):
