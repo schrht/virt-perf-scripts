@@ -33,7 +33,7 @@ v1.4.1  2019-12-16  charles.shih  Bugfix for the ioengine support.
 v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
 v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
 v1.6    2019-12-19  charles.shih  Add the dry-run support.
-v1.7    2019-12-20  charles.shih  Refactory the job controll part.
+v1.7    2019-12-20  charles.shih  Refactory the job controller part.
 """
 
 import os
