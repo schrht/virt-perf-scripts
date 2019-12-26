@@ -62,6 +62,8 @@ Options:
   --iodepth_list TEXT      [FIO] # of I/O units to keep in flight against the
                            file.
   --log_path TEXT          Where the *.fiolog files will be saved to.
+  --plots                  Generate bw/iops/lat logs in their lifetime for the
+                           plots.
   --dryrun                 Print the commands that would be executed, but do
                            not execute them.
   --help                   Show this message and exit.
