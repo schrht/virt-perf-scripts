@@ -33,6 +33,7 @@ v1.4.1  2019-12-16  charles.shih  Bugfix for the ioengine support.
 v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
 v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
 v1.6    2019-12-19  charles.shih  Add the dry-run support.
+v1.7    2019-12-20  charles.shih  Refactory the job controller part.
 """
 
 import os
@@ -98,6 +99,8 @@ class FioTestRunner:
             None
 
         """
+
+        # Parse Args
         if 'backend' not in params:
             print('[ERROR] Missing required params: params[backend]')
             exit(1)
@@ -223,10 +226,14 @@ class FioTestRunner:
         else:
             self.dryrun = params['dryrun']
 
+        # Init variables
+        self.jobs = []
+        self.path = ''
+
         return None
 
-    def _split_fio_tests(self):
-        """Split fio test parameters.
+    def _split_tests(self):
+        """Split fio test parameters and create job list.
 
         This function splits the parameters for running the fio tests.
 
@@ -234,40 +241,40 @@ class FioTestRunner:
         - self.rounds
         - self.bs_list
         - self.iodepth_list
-        - self.rw_list          (Most often changing)
+        - self.rw_list
+        (Most often changing)
 
         Args:
             None
 
         Returns:
-            The iterator of fio test parameters in (round, bs, iodepth, rw).
+            None
 
+        Updates:
+            self.jobs: the job list.
         """
-        return itertools.product(
+        # Overall parameters
+        self.path = os.path.expanduser(self.log_path)
+
+        # Split parameters
+        param_tuples = itertools.product(
             list(range(1, self.rounds + 1)), self.bs_list, self.iodepth_list,
             self.rw_list)
 
-    def run_tests(self):
-        """Split and run all the sub-cases."""
-        fio_params = self._split_fio_tests()
-        for fio_param in fio_params:
-            (rd, bs, iodepth, rw) = fio_param
+        # Generate command for all the tests
+        jobnum = 0
+        for param_tuple in param_tuples:
+            (rd, bs, iodepth, rw) = param_tuple
 
-            # Set log file
-            output_path = os.path.expanduser(self.log_path)
-            if not os.path.exists(output_path):
-                os.makedirs(output_path)
-
-            output_file = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s.fiolog' % (
+            # Set case and log file name
+            casename = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s' % (
                 self.backend, self.driver, self.fs, self.ioengine, rw, bs, iodepth,
-                self.numjobs, rd,
-                time.strftime('%Y%m%d%H%M%S', time.localtime()))
-
-            output = output_path + os.sep + output_file
+                self.numjobs, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()))
+            output = self.path + os.sep + casename + '.fiolog'
 
             # Build fio command
             command = 'fio'
-            command += ' --name=%s' % output_file
+            command += ' --name=%s' % casename
             command += ' --filename=%s' % self.filename
             command += ' --size=80G'
             command += ' --ioengine=%s' % self.ioengine
@@ -279,14 +286,16 @@ class FioTestRunner:
             command += ' --time_based'
             command += ' --runtime=%s' % self.runtime
             command += ' --group_reporting'
+            command += ' --output-format=normal,json+'
+            command += ' --output=%s' % output
+
+            # Reuse 'description' to integrate some metadata
             command += ' --description="%s"' % {
                 'backend': self.backend,
                 'driver': self.driver,
                 'format': self.fs,
                 'round': rd
             }
-            command += ' --output-format=normal,json+'
-            command += ' --output=%s' % output
 
             # [Technical Preview] Collect CPU idleness
             command += ' --idle-prof=percpu'
@@ -294,17 +303,50 @@ class FioTestRunner:
             # Parse options only, don't start any I/O
             # command += ' --parse-only'  # (comment this line for testing)
 
-            # Execute fio test
+            # save the current test command into jobs
+            jobnum += 1
+            self.jobs.append({'jobnum': jobnum, 'command': command, 'status': 'NOTRUN',
+                              'start': None, 'stop': None})
+
+        return None
+
+    def start(self):
+        """Start to run all tests in the job list."""
+
+        if not self.jobs:
+            self._split_tests()
+
+        jobnum = 0
+        total_num = len(self.jobs)
+        for job in self.jobs:
+            # Show job information
+            jobnum += 1
+            start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             print('-' * 50)
-            print('Current Time: %s' % time.strftime('%Y-%m-%d %H:%M:%S',
-                                                     time.localtime()))
-            print('Test Command: %s' % command)
+            print('Current Job  : %s / %s' % (jobnum, total_num))
+            print('Current Time : %s' % start_time)
+            print('Test Command : %s' % job['command'])
             print('-' * 50)
 
             if self.dryrun == False:
-                # Drop the caches and run fio
+                # Create log directory
+                if not os.path.exists(self.path):
+                    os.makedirs(self.path)
+
+                # Drop caches
                 os.system('sync; echo 3 > /proc/sys/vm/drop_caches')
-                os.system(command)
+
+                # Execute fio test
+                os.system(job['command'])
+            else:
+                time.sleep(0.2)
+
+            # Update jobs data
+            job['status'] = 'FINISH'
+            job['start'] = start_time
+            job['stop'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+        return None
 
 
 def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
@@ -367,7 +409,7 @@ def run_fio_test(params={}):
     print('=' * 50)
 
     fiorunner = FioTestRunner(params)
-    fiorunner.run_tests()
+    fiorunner.start()
 
     print('=' * 50)
     print('Finish Time: %s' % time.strftime('%Y-%m-%d %H:%M:%S',
@@ -411,7 +453,7 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--iodepth_list',
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
-@click.option('--dryrun', is_flag=True ,help='Print the commands that would be \
+@click.option('--dryrun', is_flag=True, help='Print the commands that would be \
 executed, but do not execute them.')
 def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
         rw_list, bs_list, iodepth_list, log_path, dryrun):
