@@ -34,8 +34,9 @@ v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
 v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
 v1.6    2019-12-19  charles.shih  Add the dry-run support.
 v1.7    2019-12-20  charles.shih  Refactory the job controller part.
-v1.8    2019-12-26  charles.shih  Support generate logs for the plots.
+v1.8    2019-12-26  charles.shih  Support generating logs for the plots.
 v1.8.1  2019-12-30  charles.shih  Bugfix for the dryrun and plots parameters.
+v2.0    2019-12-30  charles.shih  Support Generating bw/iops/lat plots.
 """
 
 import os
@@ -96,7 +97,7 @@ class FioTestRunner:
                 log_path: str
                     Where the *.fiolog files will be saved to.
                 plots: bool
-                    Generate bw/iops/lat logs in their lifetime for the plots.
+                    Generate bw/iops/lat logs and plots in their lifetime.
                 dryrun: bool
                     Print the commands that would be executed, but do not execute them.
         Returns:
@@ -278,11 +279,14 @@ class FioTestRunner:
         for param_tuple in param_tuples:
             (rd, bs, iodepth, rw) = param_tuple
 
+            command = pre_command = post_command = ''
+
             # Set case and log file name
             casename = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s' % (
                 self.backend, self.driver, self.fs, self.ioengine, rw, bs, iodepth,
                 self.numjobs, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()))
-            output = self.path + os.sep + casename + '.fiolog'
+            output_path = self.path + os.sep + casename
+            output = output_path + os.sep + casename + '.fiolog'
 
             # Build fio command
             command = 'fio'
@@ -314,7 +318,7 @@ class FioTestRunner:
 
             # Generate bw/iops/lat logs in their lifetime for the plots
             if self.plots:
-                prefix = self.path + os.sep + casename
+                prefix = output_path + os.sep + casename
                 command += ' --write_bw_log=%s' % prefix
                 command += ' --write_iops_log=%s' % prefix
                 command += ' --write_lat_log=%s' % prefix
@@ -324,10 +328,29 @@ class FioTestRunner:
             # Parse options only, don't start any I/O
             # command += ' --parse-only'  # (comment this line for testing)
 
+            # Set pre-command
+            pre_command += 'mkdir -p %s; ' % output_path
+            pre_command += 'sync; echo 3 > /proc/sys/vm/drop_caches; '    # Drop caches
+
+            # Set post-command
+            if self.plots:
+                post_command += 'pushd %s &>/dev/null; ' % output_path
+                post_command += 'fio_generate_plots %s &>/dev/null; ' % casename
+                post_command += 'popd &>/dev/null; '
+
+            post_command += 'pushd %s &>/dev/null' % output_path
+            post_command += ' && tar zcf %s.tar.gz *; ' % casename
+            post_command += 'popd &>/dev/null; '
+
+            post_command += 'mv -t %s %s/%s.tar.gz' % (
+                self.path, output_path, casename)
+            post_command += ' && rm -r %s; ' % output_path
+
             # save the current test command into jobs
             jobnum += 1
-            self.jobs.append({'jobnum': jobnum, 'command': command, 'status': 'NOTRUN',
-                              'start': None, 'stop': None})
+            self.jobs.append({'jobnum': jobnum, 'command': command,
+                              'pre_command': pre_command, 'post_command': post_command,
+                              'status': 'NOTRUN', 'start': None, 'stop': None})
 
         return None
 
@@ -354,11 +377,10 @@ class FioTestRunner:
                 if not os.path.exists(self.path):
                     os.makedirs(self.path)
 
-                # Drop caches
-                os.system('sync; echo 3 > /proc/sys/vm/drop_caches')
-
-                # Execute fio test
+                # Execute current test
+                os.system(job['pre_command'])
                 os.system(job['command'])
+                os.system(job['post_command'])
             else:
                 time.sleep(0.2)
 
@@ -477,7 +499,7 @@ specify a number of targets by separating the names with a \':\' colon.')
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
 @click.option('--plots/--no-plots', is_flag=True, default=None, help='Generate \
-bw/iops/lat logs in their lifetime for the plots.')
+bw/iops/lat logs and plots in their lifetime.')
 @click.option('--dryrun', is_flag=True, default=None, help='Print the commands \
 that would be executed, but do not execute them.')
 def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,

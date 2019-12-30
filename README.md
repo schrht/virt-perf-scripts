@@ -10,7 +10,7 @@ This tool is designed for running an FIO benchmark in guest.
 
 1. Install [`fio`](https://github.com/axboe/fio/releases) on the guest.
 
-> `sudo yum install -y fio`
+> `sudo yum install -y libaio fio gnuplot`
 
 2. Install the following Python modules:
 - `click`
@@ -20,7 +20,7 @@ This tool is designed for running an FIO benchmark in guest.
 - `yaml`
 
 > Notes:  
-> You can use `./block/setup.sh` on RHEL systems.
+> You can use `./block/setup.sh` for step 1 and 2 on RHEL systems.
 
 3. Deliver the following scripts to the guest:
 - `./block/RunFioTest.py`
@@ -62,8 +62,8 @@ Options:
   --iodepth_list TEXT      [FIO] # of I/O units to keep in flight against the
                            file.
   --log_path TEXT          Where the *.fiolog files will be saved to.
-  --plots                  Generate bw/iops/lat logs in their lifetime for the
-                           plots.
+  --plots / --no-plots     Generate bw/iops/lat logs and plots in their
+                           lifetime.
   --dryrun                 Print the commands that would be executed, but do
                            not execute them.
   --help                   Show this message and exit.
