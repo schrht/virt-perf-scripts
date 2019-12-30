@@ -27,6 +27,7 @@ v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
                                   multiple disks involved.
 v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
 v2.4    2019-07-29  charles.shih  Collect 90% complete latency number.
+v2.5    2019-12-30  charles.shih  Support handling fiolog in tarballs.
 """
 
 import json
@@ -185,8 +186,14 @@ class FioTestReporter():
             return 1
 
         # load raw data from files
-        for basename in os.listdir(params['result_path']):
-            filename = params['result_path'] + '/' + basename
+        for fname in os.listdir(params['result_path']):
+            filename = params['result_path'] + os.sep + fname
+
+            if filename.endswith('.tar.gz') and os.path.isfile(filename):
+                tmpfolder = '/tmp/fio-report.tmp'
+                os.system('rm -rf {0}; mkdir -p {0}'.format(tmpfolder))
+                os.system('tar xf {1} -C {0}'.format(tmpfolder, filename))
+                filename = tmpfolder + os.sep + fname.replace('.tar.gz', '.fiolog')
 
             if filename.endswith('.fiolog') and os.path.isfile(filename):
                 (result, raw_data) = self._get_raw_data_from_fio_log(filename)
