@@ -35,6 +35,7 @@ v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
 v1.6    2019-12-19  charles.shih  Add the dry-run support.
 v1.7    2019-12-20  charles.shih  Refactory the job controller part.
 v1.8    2019-12-26  charles.shih  Support generate logs for the plots.
+v1.8.1  2019-12-30  charles.shih  Bugfix for the dryrun and plots parameters.
 """
 
 import os
@@ -475,10 +476,10 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--iodepth_list',
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
-@click.option('--plots', is_flag=True, help='Generate bw/iops/lat logs in their \
-lifetime for the plots.')
-@click.option('--dryrun', is_flag=True, help='Print the commands that would be \
-executed, but do not execute them.')
+@click.option('--plots/--no-plots', is_flag=True, default=None, help='Generate \
+bw/iops/lat logs in their lifetime for the plots.')
+@click.option('--dryrun', is_flag=True, default=None, help='Print the commands \
+that would be executed, but do not execute them.')
 def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
         rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
     """Command line interface.

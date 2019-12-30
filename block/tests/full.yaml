@@ -27,3 +27,5 @@ FioTestRunner:
     - 8
     - 64
     - 256
+  plots: true
+  dryrun: false
