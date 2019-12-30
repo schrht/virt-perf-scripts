@@ -28,6 +28,7 @@ v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
 v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
 v2.4    2019-07-29  charles.shih  Collect 90% complete latency number.
 v2.5    2019-12-30  charles.shih  Support handling fiolog in tarballs.
+v2.6    2019-12-30  charles.shih  Fix a bug of parsing disk utils (buffered IO).
 """
 
 import json
@@ -262,17 +263,17 @@ class FioTestReporter():
                 'percentile']['90.000000'] / 1000000.0
             perf_kpi['clat90'] = perf_kpi['r-clat90'] + perf_kpi['w-clat90']
 
-            # Get util% of the disk
-            if len(raw_data['disk_util']) == 1:
-                perf_kpi['util'] = raw_data['disk_util'][0]['util']
-            else:
-                print('[WARNING] multiple disks involved, set the lowest \
-value as disk utilization.')
-                utils = [
-                    x['util'] for x in raw_data['disk_util']
-                    if ('aggr_util' not in x)
-                ]
-                perf_kpi['util'] = min(utils)
+            # Get util% of the disk if there is
+            if 'disk_util' in raw_data:
+                if len(raw_data['disk_util']) == 1:
+                    perf_kpi['util'] = raw_data['disk_util'][0]['util']
+                else:
+                    # Multiple disks involved, get the lowest value
+                    utils = [
+                        x['util'] for x in raw_data['disk_util']
+                        if ('aggr_util' not in x)
+                    ]
+                    perf_kpi['util'] = min(utils)
 
             # Get additional information
             try:
