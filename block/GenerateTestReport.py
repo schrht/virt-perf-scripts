@@ -29,6 +29,7 @@ v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
 v2.4    2019-07-29  charles.shih  Collect 90% complete latency number.
 v2.5    2019-12-30  charles.shih  Support handling fiolog in tarballs.
 v2.6    2019-12-30  charles.shih  Fix a bug of parsing disk utils (buffered IO).
+v2.6.1  2019-12-30  charles.shih  Add "NaN" to the report if disk utils unavailable.
 """
 
 import json
@@ -274,6 +275,8 @@ class FioTestReporter():
                         if ('aggr_util' not in x)
                     ]
                     perf_kpi['util'] = min(utils)
+            else:
+                perf_kpi['util'] = 'NaN'
 
             # Get additional information
             try:
