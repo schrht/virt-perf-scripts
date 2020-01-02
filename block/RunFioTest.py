@@ -379,7 +379,9 @@ class FioTestRunner:
             print('-' * 50)
             print('Current Job  : %s / %s' % (jobnum, total_num))
             print('Current Time : %s' % start_time)
+            print('Pre Command  : %s' % job['pre_command'])
             print('Test Command : %s' % job['command'])
+            print('Post Command : %s' % job['post_command'])
             print('-' * 50)
 
             if self.dryrun == False:
