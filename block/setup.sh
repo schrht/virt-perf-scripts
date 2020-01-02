@@ -6,6 +6,7 @@
 # History:
 #   v1.0  2019-12-02  yuxin.sun     init version
 #   v1.1  2019-12-30  charles.shih  install gnuplot
+#   v1.2  2020-01-02  charles.shih  install sysstat
 
 # Get system info
 project=$(cat /etc/redhat-release | grep -Po 'release \K[0-9]*')
@@ -13,6 +14,10 @@ echo "Setup block test environment in RHEL-$project..."
 
 # Install fio
 yum install -y libaio-devel fio gnuplot
+
+# Install sysstat (sar)
+yum install -y sysstat
+systemclt enable --now sysstat
 
 # Install Python runtime
 if [[ x$project == x'7' ]]; then
