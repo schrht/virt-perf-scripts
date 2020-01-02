@@ -7,6 +7,7 @@
 #   v1.0  2019-12-02  yuxin.sun     init version
 #   v1.1  2019-12-30  charles.shih  install gnuplot
 #   v1.2  2020-01-02  charles.shih  install sysstat
+#   v1.3  2020-01-02  charles.shih  install psmisc
 
 # Get system info
 project=$(cat /etc/redhat-release | grep -Po 'release \K[0-9]*')
@@ -18,6 +19,9 @@ yum install -y libaio-devel fio gnuplot
 # Install sysstat (sar)
 yum install -y sysstat
 systemclt enable --now sysstat
+
+# Install other pacages (killall)
+yum install -y psmisc
 
 # Install Python runtime
 if [[ x$project == x'7' ]]; then
