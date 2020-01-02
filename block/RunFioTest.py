@@ -38,6 +38,7 @@ v1.8    2019-12-26  charles.shih  Support generating logs for the plots.
 v1.8.1  2019-12-30  charles.shih  Bugfix for the dryrun and plots parameters.
 v2.0    2019-12-30  charles.shih  Support Generating bw/iops/lat plots.
 v2.1    2020-01-02  charles.shih  Technical Preview, collect SAR logs.
+v2.1.1  2020-01-02  charles.shih  Add switch for technical preview features.
 """
 
 import os
@@ -270,6 +271,10 @@ class FioTestRunner:
         # Overall parameters
         self.path = os.path.expanduser(self.log_path)
 
+        # Technical Preview
+        support_idleness = True
+        support_sar = True
+
         # Split parameters
         param_tuples = itertools.product(
             list(range(1, self.rounds + 1)), self.bs_list, self.iodepth_list,
@@ -314,8 +319,9 @@ class FioTestRunner:
                 'round': rd
             }
 
-            # [Technical Preview] Collect CPU idleness
-            # command += ' --idle-prof=percpu'
+            # Technical Preview: Collect CPU idleness
+            if support_idleness and not support_sar:
+                command += ' --idle-prof=percpu'
 
             # Generate bw/iops/lat logs in their lifetime for the plots
             if self.plots:
@@ -334,7 +340,8 @@ class FioTestRunner:
             pre_command += 'sync; echo 3 > /proc/sys/vm/drop_caches; '    # Drop caches
 
             # Technical Preview: SAR
-            pre_command += 'sar -A 1 -o data.sa &>/dev/null & '
+            if support_sar:
+                pre_command += 'sar -A 1 -o data.sa &>/dev/null & '
 
             # Set post-command
             if self.plots:
@@ -343,10 +350,11 @@ class FioTestRunner:
                 post_command += 'popd &>/dev/null; '
 
             # Technical Preview: SAR
-            post_command += 'pushd %s &>/dev/null; ' % output_path
-            post_command += 'killall sar; '
-            post_command += 'sar -f data.sa -u > sar-cpu.log; '
-            post_command += 'popd &>/dev/null; '
+            if support_sar:
+                post_command += 'pushd %s &>/dev/null; ' % output_path
+                post_command += 'killall sar; '
+                post_command += 'sar -f data.sa -u > sar-cpu.log; '
+                post_command += 'popd &>/dev/null; '
 
             # Collect log files and create tarball
             post_command += 'pushd %s &>/dev/null' % output_path
