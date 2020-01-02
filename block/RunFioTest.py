@@ -37,6 +37,7 @@ v1.7    2019-12-20  charles.shih  Refactory the job controller part.
 v1.8    2019-12-26  charles.shih  Support generating logs for the plots.
 v1.8.1  2019-12-30  charles.shih  Bugfix for the dryrun and plots parameters.
 v2.0    2019-12-30  charles.shih  Support Generating bw/iops/lat plots.
+v2.1    2020-01-02  charles.shih  Technical Preview, collect SAR logs.
 """
 
 import os
@@ -314,7 +315,7 @@ class FioTestRunner:
             }
 
             # [Technical Preview] Collect CPU idleness
-            command += ' --idle-prof=percpu'
+            # command += ' --idle-prof=percpu'
 
             # Generate bw/iops/lat logs in their lifetime for the plots
             if self.plots:
@@ -329,8 +330,11 @@ class FioTestRunner:
             # command += ' --parse-only'  # (comment this line for testing)
 
             # Set pre-command
-            pre_command += 'mkdir -p %s; ' % output_path
+            pre_command += 'mkdir -p %s; cd %s; ' % (output_path, output_path)
             pre_command += 'sync; echo 3 > /proc/sys/vm/drop_caches; '    # Drop caches
+
+            # Technical Preview: SAR
+            pre_command += 'sar -A 1 -o data.sa &>/dev/null & '
 
             # Set post-command
             if self.plots:
@@ -338,10 +342,16 @@ class FioTestRunner:
                 post_command += 'fio_generate_plots %s &>/dev/null; ' % casename
                 post_command += 'popd &>/dev/null; '
 
+            # Technical Preview: SAR
+            post_command += 'pushd %s &>/dev/null; ' % output_path
+            post_command += 'killall sar; '
+            post_command += 'sar -f data.sa -u > sar-cpu.log; '
+            post_command += 'popd &>/dev/null; '
+
+            # Collect log files and create tarball
             post_command += 'pushd %s &>/dev/null' % output_path
             post_command += ' && tar zcf %s.tar.gz *; ' % casename
             post_command += 'popd &>/dev/null; '
-
             post_command += 'mv -t %s %s/%s.tar.gz' % (
                 self.path, output_path, casename)
             post_command += ' && rm -r %s; ' % output_path
