@@ -4,10 +4,11 @@
 #   Setup environment for running on RHEL.
 #
 # History:
-#   v1.0  2019-12-02  yuxin.sun     init version
-#   v1.1  2019-12-30  charles.shih  install gnuplot
-#   v1.2  2020-01-02  charles.shih  install sysstat
-#   v1.3  2020-01-02  charles.shih  install psmisc
+#   v1.0    2019-12-02  yuxin.sun     init version
+#   v1.1    2019-12-30  charles.shih  install gnuplot
+#   v1.2    2020-01-02  charles.shih  install sysstat
+#   v1.3    2020-01-02  charles.shih  install psmisc
+#   v1.3.1  2020-01-03  charles.shih  fix a typo
 
 # Get system info
 project=$(cat /etc/redhat-release | grep -Po 'release \K[0-9]*')
@@ -18,7 +19,7 @@ yum install -y libaio-devel fio gnuplot
 
 # Install sysstat (sar)
 yum install -y sysstat
-systemclt enable --now sysstat
+systemctl enable --now sysstat
 
 # Install other pacages (killall)
 yum install -y psmisc
