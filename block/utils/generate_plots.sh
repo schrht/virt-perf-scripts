@@ -5,9 +5,10 @@
 #   It was modified based on fio_generate_plots Version 1.0 @ 20121231
 #
 # History:
-#   v1.0  2020-01-03  charles.shih  copied version
+#   v1.0    2020-01-03  charles.shih  copied version
+#   v1.0.1  2020-01-03  charles.shih  format this script
 
-# This script is an almost total rewrite by Louwrentius 
+# This script is an almost total rewrite by Louwrentius
 # of the original fio_generate_plots script provided as part of the FIO storage
 # benchmark utiliy. I only retained how GNUplot is used to generate graphs, as
 # that is something I know nothing about.
@@ -17,35 +18,32 @@
 # allows resolution independent graphs to be generated.
 #
 # This script supports GNUPLOT 4.4 and higher.
-# 
+#
 # Version 1.0 @ 20121231
 
 if [ -z "$1" ]; then
-	echo "Usage: fio_generate_plots subtitle [xres yres]"
-	exit 1
+    echo "Usage: fio_generate_plots subtitle [xres yres]"
+    exit 1
 fi
 
 GNUPLOT=$(which gnuplot)
-if [ ! -x "$GNUPLOT" ]
-then
-	echo You need gnuplot installed to generate graphs
-	exit 1
+if [ ! -x "$GNUPLOT" ]; then
+    echo You need gnuplot installed to generate graphs
+    exit 1
 fi
 
 TITLE="$1"
 
 # set resolution
-if [ ! -z "$2" ] && [ ! -z "$3" ]
-then
-	XRES="$2"
-	YRES="$3"
+if [ ! -z "$2" ] && [ ! -z "$3" ]; then
+    XRES="$2"
+    YRES="$3"
 else
-	XRES=1280
-	YRES=768
+    XRES=1280
+    YRES=768
 fi
 
-if [ -z "$SAMPLE_DURATION" ]
-then
+if [ -z "$SAMPLE_DURATION" ]; then
     SAMPLE_DURATION="*"
 fi
 
@@ -79,10 +77,9 @@ DEFAULT_KEY="set key outside bottom center ; set key box enhanced spacing 2.0 sa
 DEFAULT_SOURCE="set label 30 \"Data source: http://example.com\" font $DEFAULT_AXIS_FONT tc rgb \"#00000f\" at screen 0.976,0.175 right"
 DEFAULT_OPTS="$DEFAULT_LINE_COLORS ; $DEFAULT_GRID_LINE ; $DEFAULT_GRID ; $DEFAULT_GRID_MINOR ; $DEFAULT_XLABEL ; $DEFAULT_XRANGE ; $DEFAULT_YRANGE ; $DEFAULT_XTIC ;  $DEFAULT_YTIC ; $DEFAULT_MXTIC ; $DEFAULT_MYTIC ; $DEFAULT_KEY ; $DEFAULT_TERMINAL ; $DEFAULT_SOURCE"
 
-plot () {
-    
-    if [ -z "$TITLE" ]
-    then	
+plot() {
+
+    if [ -z "$TITLE" ]; then
         PLOT_TITLE=" set title \"$1\" font $DEFAULT_TITLE_FONT"
     else
         PLOT_TITLE=" set title \"$TITLE\\\n\\\n{/*0.6 "$1"}\" font $DEFAULT_TITLE_FONT"
@@ -96,30 +93,28 @@ plot () {
     echo "yaxis: $YAXIS"
 
     i=0
-    
-    for x in *_"$FILETYPE".log *_"$FILETYPE".*.log
-    do
+
+    for x in *_"$FILETYPE".log *_"$FILETYPE".*.log; do
         if [ -e "$x" ]; then
-            i=$((i+1))
+            i=$((i + 1))
             PT=$(echo $x | sed 's/\(.*\)_'$FILETYPE'\(.*\).log$/\1\2/')
-            if [ ! -z "$PLOT_LINE" ]
-            then
+            if [ ! -z "$PLOT_LINE" ]; then
                 PLOT_LINE=$PLOT_LINE", "
             fi
 
             DEPTH=$(echo $PT | cut -d "-" -f 4)
-            PLOT_LINE=$PLOT_LINE"'$x' using (\$1/1000):(\$2/$SCALE) title \"Queue depth $DEPTH\" with lines ls $i" 
+            PLOT_LINE=$PLOT_LINE"'$x' using (\$1/1000):(\$2/$SCALE) title \"Queue depth $DEPTH\" with lines ls $i"
         fi
     done
 
     if [ $i -eq 0 ]; then
-       echo "No log files found"
-       exit 1
+        echo "No log files found"
+        exit 1
     fi
 
     OUTPUT="set output \"$TITLE-$FILETYPE.svg\" "
 
-    echo " $PLOT_TITLE ; $YAXIS ; $DEFAULT_OPTS ; show style lines ; $OUTPUT ; plot "  $PLOT_LINE  | $GNUPLOT -
+    echo " $PLOT_TITLE ; $YAXIS ; $DEFAULT_OPTS ; show style lines ; $OUTPUT ; plot " $PLOT_LINE | $GNUPLOT -
     unset PLOT_LINE
 }
 
@@ -132,5 +127,3 @@ plot "I/O Operations Per Second" iops "IOPS" 1
 plot "I/O Submission Latency" slat "Time (μsec)" 1
 plot "I/O Completion Latency" clat "Time (msec)" 1000
 plot "I/O Bandwidth" bw "Throughput (KB/s)" 1
-
-
