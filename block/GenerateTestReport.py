@@ -27,6 +27,10 @@ v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
                                   multiple disks involved.
 v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
 v2.4    2019-07-29  charles.shih  Collect 90% complete latency number.
+v2.5    2019-12-30  charles.shih  Support handling fiolog in tarballs.
+v2.6    2019-12-30  charles.shih  Fix a bug of parsing disk utils (buffered IO).
+v2.6.1  2019-12-30  charles.shih  Add "NaN" to the report if disk utils unavailable.
+v2.6.2  2019-12-30  charles.shih  Remove temporary files after parsing fiolog.
 """
 
 import json
@@ -184,14 +188,23 @@ class FioTestReporter():
             print('[ERROR] Missing required params: params[result_path]')
             return 1
 
-        # load raw data from files
-        for basename in os.listdir(params['result_path']):
-            filename = params['result_path'] + '/' + basename
+        # Load raw data from files
+        for fname in os.listdir(params['result_path']):
+            filename = params['result_path'] + os.sep + fname
+
+            tmpfolder = '/tmp/fio-report.tmp'
+            if filename.endswith('.tar.gz') and os.path.isfile(filename):
+                os.system('mkdir -p {0}'.format(tmpfolder))
+                os.system('tar xf {1} -C {0}'.format(tmpfolder, filename))
+                filename = tmpfolder + os.sep + fname.replace('.tar.gz', '.fiolog')
 
             if filename.endswith('.fiolog') and os.path.isfile(filename):
                 (result, raw_data) = self._get_raw_data_from_fio_log(filename)
                 if result == 0:
                     self.raw_data_list.append(raw_data)
+
+            # Remove temporary files
+            os.system('[ -e {0} ] && rm -rf {0}'.format(tmpfolder))
 
         return 0
 
@@ -255,17 +268,19 @@ class FioTestReporter():
                 'percentile']['90.000000'] / 1000000.0
             perf_kpi['clat90'] = perf_kpi['r-clat90'] + perf_kpi['w-clat90']
 
-            # Get util% of the disk
-            if len(raw_data['disk_util']) == 1:
-                perf_kpi['util'] = raw_data['disk_util'][0]['util']
+            # Get util% of the disk if there is
+            if 'disk_util' in raw_data:
+                if len(raw_data['disk_util']) == 1:
+                    perf_kpi['util'] = raw_data['disk_util'][0]['util']
+                else:
+                    # Multiple disks involved, get the lowest value
+                    utils = [
+                        x['util'] for x in raw_data['disk_util']
+                        if ('aggr_util' not in x)
+                    ]
+                    perf_kpi['util'] = min(utils)
             else:
-                print('[WARNING] multiple disks involved, set the lowest \
-value as disk utilization.')
-                utils = [
-                    x['util'] for x in raw_data['disk_util']
-                    if ('aggr_util' not in x)
-                ]
-                perf_kpi['util'] = min(utils)
+                perf_kpi['util'] = 'NaN'
 
             # Get additional information
             try:

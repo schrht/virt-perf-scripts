@@ -18,3 +18,5 @@ FioTestRunner:
   iodepth_list:
     - 1
     - 64
+  plots: true
+  dryrun: false

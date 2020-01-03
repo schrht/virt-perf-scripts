@@ -34,6 +34,12 @@ v1.5    2019-12-17  charles.shih  Technical Preview, collect CPU idleness.
 v1.5.1  2019-12-17  charles.shih  Bugfix for the direct parameter.
 v1.6    2019-12-19  charles.shih  Add the dry-run support.
 v1.7    2019-12-20  charles.shih  Refactory the job controller part.
+v1.8    2019-12-26  charles.shih  Support generating logs for the plots.
+v1.8.1  2019-12-30  charles.shih  Bugfix for the dryrun and plots parameters.
+v2.0    2019-12-30  charles.shih  Support Generating bw/iops/lat plots.
+v2.1    2020-01-02  charles.shih  Technical Preview, collect SAR logs.
+v2.1.1  2020-01-02  charles.shih  Add switch for technical preview features.
+v2.2    2020-01-03  charles.shih  Use customized plots generator.
 """
 
 import os
@@ -93,6 +99,8 @@ class FioTestRunner:
                     Example: '1, 8, 64'...
                 log_path: str
                     Where the *.fiolog files will be saved to.
+                plots: bool
+                    Generate bw/iops/lat logs and plots in their lifetime.
                 dryrun: bool
                     Print the commands that would be executed, but do not execute them.
         Returns:
@@ -218,6 +226,14 @@ class FioTestRunner:
         else:
             self.log_path = params['log_path']
 
+        if 'plots' not in params:
+            self.plots = False
+        elif not isinstance(params['plots'], bool):
+            print('[ERROR] params[plots] must be bool.')
+            exit(1)
+        else:
+            self.plots = params['plots']
+
         if 'dryrun' not in params:
             self.dryrun = False
         elif not isinstance(params['dryrun'], bool):
@@ -256,6 +272,10 @@ class FioTestRunner:
         # Overall parameters
         self.path = os.path.expanduser(self.log_path)
 
+        # Technical Preview
+        support_idleness = True
+        support_sar = True
+
         # Split parameters
         param_tuples = itertools.product(
             list(range(1, self.rounds + 1)), self.bs_list, self.iodepth_list,
@@ -266,11 +286,14 @@ class FioTestRunner:
         for param_tuple in param_tuples:
             (rd, bs, iodepth, rw) = param_tuple
 
+            command = pre_command = post_command = ''
+
             # Set case and log file name
             casename = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s' % (
                 self.backend, self.driver, self.fs, self.ioengine, rw, bs, iodepth,
                 self.numjobs, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()))
-            output = self.path + os.sep + casename + '.fiolog'
+            output_path = self.path + os.sep + casename
+            output = output_path + os.sep + casename + '.fiolog'
 
             # Build fio command
             command = 'fio'
@@ -297,16 +320,57 @@ class FioTestRunner:
                 'round': rd
             }
 
-            # [Technical Preview] Collect CPU idleness
-            command += ' --idle-prof=percpu'
+            # Technical Preview: Collect CPU idleness
+            if support_idleness and not support_sar:
+                command += ' --idle-prof=percpu'
+
+            # Generate bw/iops/lat logs in their lifetime for the plots
+            if self.plots:
+                prefix = output_path + os.sep + casename
+                command += ' --write_bw_log=%s' % prefix
+                command += ' --write_iops_log=%s' % prefix
+                command += ' --write_lat_log=%s' % prefix
+                command += ' --log_avg_msec=500'
+                command += ' --per_job_logs=1'
 
             # Parse options only, don't start any I/O
             # command += ' --parse-only'  # (comment this line for testing)
 
+            # Set pre-command
+            pre_command += 'mkdir -p %s; cd %s; ' % (output_path, output_path)
+            pre_command += 'sync; echo 3 > /proc/sys/vm/drop_caches; '    # Drop caches
+
+            # Technical Preview: SAR
+            if support_sar:
+                pre_command += 'sar -A 1 -o data.sa &>/dev/null & '
+
+            # Set post-command
+            if self.plots:
+                post_command += 'export PATH=$PATH:$PWD/utils/; '
+                post_command += 'pushd %s &>/dev/null; ' % output_path
+                post_command += 'generate_plots.sh %s &>/dev/null; ' % casename
+                post_command += 'popd &>/dev/null; '
+
+            # Technical Preview: SAR
+            if support_sar:
+                post_command += 'pushd %s &>/dev/null; ' % output_path
+                post_command += 'killall sar; '
+                post_command += 'sar -f data.sa -u > sar-cpu.log; '
+                post_command += 'popd &>/dev/null; '
+
+            # Collect log files and create tarball
+            post_command += 'pushd %s &>/dev/null' % output_path
+            post_command += ' && tar zcf %s.tar.gz *; ' % casename
+            post_command += 'popd &>/dev/null; '
+            post_command += 'mv -t %s %s/%s.tar.gz' % (
+                self.path, output_path, casename)
+            post_command += ' && rm -r %s; ' % output_path
+
             # save the current test command into jobs
             jobnum += 1
-            self.jobs.append({'jobnum': jobnum, 'command': command, 'status': 'NOTRUN',
-                              'start': None, 'stop': None})
+            self.jobs.append({'jobnum': jobnum, 'command': command,
+                              'pre_command': pre_command, 'post_command': post_command,
+                              'status': 'NOTRUN', 'start': None, 'stop': None})
 
         return None
 
@@ -325,7 +389,9 @@ class FioTestRunner:
             print('-' * 50)
             print('Current Job  : %s / %s' % (jobnum, total_num))
             print('Current Time : %s' % start_time)
+            print('Pre Command  : %s' % job['pre_command'])
             print('Test Command : %s' % job['command'])
+            print('Post Command : %s' % job['post_command'])
             print('-' * 50)
 
             if self.dryrun == False:
@@ -333,11 +399,10 @@ class FioTestRunner:
                 if not os.path.exists(self.path):
                     os.makedirs(self.path)
 
-                # Drop caches
-                os.system('sync; echo 3 > /proc/sys/vm/drop_caches')
-
-                # Execute fio test
+                # Execute current test
+                os.system(job['pre_command'])
                 os.system(job['command'])
+                os.system(job['post_command'])
             else:
                 time.sleep(0.2)
 
@@ -350,7 +415,7 @@ class FioTestRunner:
 
 
 def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
-                   numjobs, rw_list, bs_list, iodepth_list, log_path, dryrun):
+                   numjobs, rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
     """Get parameters from the CLI."""
     cli_params = {}
 
@@ -380,6 +445,8 @@ def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, dir
         cli_params['iodepth_list'] = iodepth_list.split(',')
     if log_path != None:
         cli_params['log_path'] = log_path
+    if plots != None:
+        cli_params['plots'] = plots
     if dryrun != None:
         cli_params['dryrun'] = dryrun
 
@@ -453,10 +520,12 @@ specify a number of targets by separating the names with a \':\' colon.')
     '--iodepth_list',
     help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
-@click.option('--dryrun', is_flag=True, help='Print the commands that would be \
-executed, but do not execute them.')
+@click.option('--plots/--no-plots', is_flag=True, default=None, help='Generate \
+bw/iops/lat logs and plots in their lifetime.')
+@click.option('--dryrun', is_flag=True, default=None, help='Print the commands \
+that would be executed, but do not execute them.')
 def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
-        rw_list, bs_list, iodepth_list, log_path, dryrun):
+        rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
     """Command line interface.
 
     Take arguments from CLI, load default parameters from yaml file.
@@ -466,7 +535,7 @@ def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjob
     # Read user specified parameters from CLI
     cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
                                 ioengine, direct, numjobs, rw_list, bs_list,
-                                iodepth_list, log_path, dryrun)
+                                iodepth_list, log_path, plots, dryrun)
 
     # Read user configuration from yaml file
     yaml_params = get_yaml_params()

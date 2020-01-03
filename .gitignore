@@ -105,3 +105,6 @@ ENV/
 
 block/samples/benchmark_report.csv
 block/samples/report.csv
+block/fio_result/
+block/run.py
+block/virt.yaml
