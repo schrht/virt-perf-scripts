@@ -39,6 +39,7 @@ v1.8.1  2019-12-30  charles.shih  Bugfix for the dryrun and plots parameters.
 v2.0    2019-12-30  charles.shih  Support Generating bw/iops/lat plots.
 v2.1    2020-01-02  charles.shih  Technical Preview, collect SAR logs.
 v2.1.1  2020-01-02  charles.shih  Add switch for technical preview features.
+v2.2    2020-01-03  charles.shih  Use customized plots generator.
 """
 
 import os
@@ -345,8 +346,9 @@ class FioTestRunner:
 
             # Set post-command
             if self.plots:
+                post_command += 'export PATH=$PATH:$PWD/utils/; '
                 post_command += 'pushd %s &>/dev/null; ' % output_path
-                post_command += 'fio_generate_plots %s &>/dev/null; ' % casename
+                post_command += 'generate_plots.sh %s &>/dev/null; ' % casename
                 post_command += 'popd &>/dev/null; '
 
             # Technical Preview: SAR
