@@ -7,6 +7,7 @@
 # History:
 #   v1.0    2020-01-03  charles.shih  copied version
 #   v1.0.1  2020-01-03  charles.shih  format this script
+#   v2.0    2020-01-03  charles.shih  update according to needs
 
 # This script is an almost total rewrite by Louwrentius
 # of the original fio_generate_plots script provided as part of the FIO storage
@@ -74,7 +75,7 @@ DEFAULT_XRANGE="set xrange [0:$SAMPLE_DURATION]"
 DEFAULT_YRANGE="set yrange [0:*]"
 DEFAULT_GRID="set grid ls 20"
 DEFAULT_KEY="set key outside bottom center ; set key box enhanced spacing 2.0 samplen 3 horizontal width 4 height 1.2 "
-DEFAULT_SOURCE="set label 30 \"Data source: http://example.com\" font $DEFAULT_AXIS_FONT tc rgb \"#00000f\" at screen 0.976,0.175 right"
+DEFAULT_SOURCE="set label 30 \"Data source: FIO reports.\" font $DEFAULT_AXIS_FONT tc rgb \"#00000f\" at screen 0.976,0.175 right"
 DEFAULT_OPTS="$DEFAULT_LINE_COLORS ; $DEFAULT_GRID_LINE ; $DEFAULT_GRID ; $DEFAULT_GRID_MINOR ; $DEFAULT_XLABEL ; $DEFAULT_XRANGE ; $DEFAULT_YRANGE ; $DEFAULT_XTIC ;  $DEFAULT_YTIC ; $DEFAULT_MXTIC ; $DEFAULT_MYTIC ; $DEFAULT_KEY ; $DEFAULT_TERMINAL ; $DEFAULT_SOURCE"
 
 plot() {
@@ -82,40 +83,47 @@ plot() {
     if [ -z "$TITLE" ]; then
         PLOT_TITLE=" set title \"$1\" font $DEFAULT_TITLE_FONT"
     else
-        PLOT_TITLE=" set title \"$TITLE\\\n\\\n{/*0.6 "$1"}\" font $DEFAULT_TITLE_FONT"
+        PLOT_TITLE=" set title \"${TITLE//_/-}  {/*0.6 "$1"}\" font $DEFAULT_TITLE_FONT"
     fi
     FILETYPE="$2"
     YAXIS="set ylabel \"$3\" font $DEFAULT_AXIS_LABEL_FONT"
     SCALE=$4
 
-    echo "Title: $PLOT_TITLE"
-    echo "File type: $FILETYPE"
-    echo "yaxis: $YAXIS"
+    echo "INFO: Title = $PLOT_TITLE"
+    echo "INFO: File type = $FILETYPE"
+    echo "INFO: yaxis = $YAXIS"
 
     i=0
 
-    for x in *_"$FILETYPE".log *_"$FILETYPE".*.log; do
+    # Ex. fio_test_iops.1.log  fio_test_iops.2.log  fio_test_iops.3.log
+    for x in ${TITLE}_${FILETYPE}.[0-9]*.log; do
+
+        # Ex. fio_test_iops.1.log
         if [ -e "$x" ]; then
             i=$((i + 1))
-            PT=$(echo $x | sed 's/\(.*\)_'$FILETYPE'\(.*\).log$/\1\2/')
+
+            # Ex. 1
+            SERIES=$(echo $x | sed 's/^.*\.\([0-9]*\).log$/\1/')
+
             if [ ! -z "$PLOT_LINE" ]; then
                 PLOT_LINE=$PLOT_LINE", "
             fi
 
-            DEPTH=$(echo $PT | cut -d "-" -f 4)
-            PLOT_LINE=$PLOT_LINE"'$x' using (\$1/1000):(\$2/$SCALE) title \"Queue depth $DEPTH\" with lines ls $i"
+            PLOT_LINE=$PLOT_LINE"'$x' using (\$1/1000):(\$2/$SCALE) title \"Job #$SERIES\" with lines ls $i"
         fi
     done
 
     if [ $i -eq 0 ]; then
-        echo "No log files found"
-        exit 1
+        echo -e "No log files found! Pattern: ${TITLE}_${FILETYPE}.[0-9]*.log\n"
+        return
     fi
 
     OUTPUT="set output \"$TITLE-$FILETYPE.svg\" "
 
-    echo " $PLOT_TITLE ; $YAXIS ; $DEFAULT_OPTS ; show style lines ; $OUTPUT ; plot " $PLOT_LINE | $GNUPLOT -
+    echo "$PLOT_TITLE ; $YAXIS ; $DEFAULT_OPTS ; show style lines ; $OUTPUT ; plot " $PLOT_LINE | $GNUPLOT -
     unset PLOT_LINE
+
+    echo ""
 }
 
 #
