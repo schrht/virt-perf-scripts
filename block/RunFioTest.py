@@ -40,6 +40,7 @@ v2.0    2019-12-30  charles.shih  Support Generating bw/iops/lat plots.
 v2.1    2020-01-02  charles.shih  Technical Preview, collect SAR logs.
 v2.1.1  2020-01-02  charles.shih  Add switch for technical preview features.
 v2.2    2020-01-03  charles.shih  Use customized plots generator.
+v2.2.1  2020-03-13  charles.shih  PEP-8 Formatting.
 """
 
 import os
@@ -59,6 +60,7 @@ class FioTestRunner:
 
     """
 
+    # Initialize the test runner
     def __init__(self, params={}):
         """Initialize this Class.
 
@@ -102,12 +104,12 @@ class FioTestRunner:
                 plots: bool
                     Generate bw/iops/lat logs and plots in their lifetime.
                 dryrun: bool
-                    Print the commands that would be executed, but do not execute them.
+                    Print the commands that would be executed, but do not
+                    execute them.
         Returns:
             None
 
         """
-
         # Parse Args
         if 'backend' not in params:
             print('[ERROR] Missing required params: params[backend]')
@@ -268,6 +270,7 @@ class FioTestRunner:
 
         Updates:
             self.jobs: the job list.
+
         """
         # Overall parameters
         self.path = os.path.expanduser(self.log_path)
@@ -277,9 +280,9 @@ class FioTestRunner:
         support_sar = True
 
         # Split parameters
-        param_tuples = itertools.product(
-            list(range(1, self.rounds + 1)), self.bs_list, self.iodepth_list,
-            self.rw_list)
+        param_tuples = itertools.product(list(range(1, self.rounds + 1)),
+                                         self.bs_list, self.iodepth_list,
+                                         self.rw_list)
 
         # Generate command for all the tests
         jobnum = 0
@@ -290,8 +293,9 @@ class FioTestRunner:
 
             # Set case and log file name
             casename = 'fio_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s' % (
-                self.backend, self.driver, self.fs, self.ioengine, rw, bs, iodepth,
-                self.numjobs, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()))
+                self.backend, self.driver, self.fs, self.ioengine, rw, bs,
+                iodepth, self.numjobs, rd,
+                time.strftime('%Y%m%d%H%M%S', time.localtime()))
             output_path = self.path + os.sep + casename
             output = output_path + os.sep + casename + '.fiolog'
 
@@ -338,7 +342,8 @@ class FioTestRunner:
 
             # Set pre-command
             pre_command += 'mkdir -p %s; cd %s; ' % (output_path, output_path)
-            pre_command += 'sync; echo 3 > /proc/sys/vm/drop_caches; '    # Drop caches
+            # Drop caches
+            pre_command += 'sync; echo 3 > /proc/sys/vm/drop_caches; '
 
             # Technical Preview: SAR
             if support_sar:
@@ -362,21 +367,26 @@ class FioTestRunner:
             post_command += 'pushd %s &>/dev/null' % output_path
             post_command += ' && tar zcf %s.tar.gz *; ' % casename
             post_command += 'popd &>/dev/null; '
-            post_command += 'mv -t %s %s/%s.tar.gz' % (
-                self.path, output_path, casename)
+            post_command += 'mv -t %s %s/%s.tar.gz' % (self.path, output_path,
+                                                       casename)
             post_command += ' && rm -r %s; ' % output_path
 
             # save the current test command into jobs
             jobnum += 1
-            self.jobs.append({'jobnum': jobnum, 'command': command,
-                              'pre_command': pre_command, 'post_command': post_command,
-                              'status': 'NOTRUN', 'start': None, 'stop': None})
+            self.jobs.append({
+                'jobnum': jobnum,
+                'command': command,
+                'pre_command': pre_command,
+                'post_command': post_command,
+                'status': 'NOTRUN',
+                'start': None,
+                'stop': None
+            })
 
         return None
 
     def start(self):
         """Start to run all tests in the job list."""
-
         if not self.jobs:
             self._split_tests()
 
@@ -394,7 +404,7 @@ class FioTestRunner:
             print('Post Command : %s' % job['post_command'])
             print('-' * 50)
 
-            if self.dryrun == False:
+            if self.dryrun is False:
                 # Create log directory
                 if not os.path.exists(self.path):
                     os.makedirs(self.path)
@@ -414,40 +424,41 @@ class FioTestRunner:
         return None
 
 
-def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
-                   numjobs, rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
+def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine,
+                   direct, numjobs, rw_list, bs_list, iodepth_list, log_path,
+                   plots, dryrun):
     """Get parameters from the CLI."""
     cli_params = {}
 
-    if backend != None:
+    if backend is not None:
         cli_params['backend'] = backend
-    if driver != None:
+    if driver is not None:
         cli_params['driver'] = driver
-    if fs != None:
+    if fs is not None:
         cli_params['fs'] = fs
-    if rounds != None:
+    if rounds is not None:
         cli_params['rounds'] = int(rounds)
-    if filename != None:
+    if filename is not None:
         cli_params['filename'] = filename
-    if runtime != None:
+    if runtime is not None:
         cli_params['runtime'] = runtime
-    if ioengine != None:
+    if ioengine is not None:
         cli_params['ioengine'] = ioengine
-    if direct != None:
+    if direct is not None:
         cli_params['direct'] = direct
-    if numjobs != None:
+    if numjobs is not None:
         cli_params['numjobs'] = numjobs
-    if rw_list != None:
+    if rw_list is not None:
         cli_params['rw_list'] = rw_list.split(',')
-    if bs_list != None:
+    if bs_list is not None:
         cli_params['bs_list'] = bs_list.split(',')
-    if iodepth_list != None:
+    if iodepth_list is not None:
         cli_params['iodepth_list'] = iodepth_list.split(',')
-    if log_path != None:
+    if log_path is not None:
         cli_params['log_path'] = log_path
-    if plots != None:
+    if plots is not None:
         cli_params['plots'] = plots
-    if dryrun != None:
+    if dryrun is not None:
         cli_params['dryrun'] = dryrun
 
     return cli_params
@@ -471,61 +482,61 @@ def get_yaml_params():
 def run_fio_test(params={}):
     """Initialize and run the fio test."""
     print('=' * 50)
-    print('Start Time: %s' % time.strftime('%Y-%m-%d %H:%M:%S',
-                                           time.localtime()))
+    print('Start Time: %s' %
+          time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
     print('=' * 50)
 
     fiorunner = FioTestRunner(params)
     fiorunner.start()
 
     print('=' * 50)
-    print('Finish Time: %s' % time.strftime('%Y-%m-%d %H:%M:%S',
-                                            time.localtime()))
+    print('Finish Time: %s' %
+          time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
     print('=' * 50)
 
 
 @click.command()
-@click.option(
-    '--backend', help='The backend device where vdisk image is based on.')
+@click.option('--backend',
+              help='The backend device where vdisk image is based on.')
 @click.option('--driver', help='The driver to power the vdisk..')
-@click.option(
-    '--fs', help='The filesystem of the disk to be tested, "RAW" for no fs.')
-@click.option(
-    '--rounds',
-    type=click.IntRange(1, 1000),
-    help='How many rounds the fio test will be repeated.')
+@click.option('--fs',
+              help='The filesystem of the disk to be tested, "RAW" for no fs.')
+@click.option('--rounds',
+              type=click.IntRange(1, 1000),
+              help='How many rounds the fio test will be repeated.')
 @click.option(
     '--filename',
     help='[FIO] The disk(s) or specified file(s) to be tested by fio. You can \
 specify a number of targets by separating the names with a \':\' colon.')
-@click.option(
-    '--runtime',
-    help='[FIO] Terminate a job after the specified period of time.')
-@click.option(
-    '--ioengine',
-    help='[FIO] Defines how the job issues I/O to the file. Such as: \'libaio\', \
-\'io_uring\', etc.')
-@click.option(
-    '--direct',
-    type=click.IntRange(0, 1),
-    help='[FIO] Direct access to the disk.')
-@click.option(
-    '--numjobs',
-    type=click.IntRange(1, 65535),
-    help='[FIO] Create the specified number of clones of the job.')
+@click.option('--runtime',
+              help='[FIO] Terminate a job after the specified period of time.')
+@click.option('--ioengine',
+              help='[FIO] Defines how the job issues I/O to the file. \
+Such as: \'libaio\', \'io_uring\', etc.')
+@click.option('--direct',
+              type=click.IntRange(0, 1),
+              help='[FIO] Direct access to the disk.')
+@click.option('--numjobs',
+              type=click.IntRange(1, 65535),
+              help='[FIO] Create the specified number of clones of the job.')
 @click.option('--rw_list', help='[FIO] Type of I/O pattern.')
-@click.option(
-    '--bs_list', help='[FIO] The block size in bytes used for I/O units.')
-@click.option(
-    '--iodepth_list',
-    help='[FIO] # of I/O units to keep in flight against the file.')
+@click.option('--bs_list',
+              help='[FIO] The block size in bytes used for I/O units.')
+@click.option('--iodepth_list',
+              help='[FIO] # of I/O units to keep in flight against the file.')
 @click.option('--log_path', help='Where the *.fiolog files will be saved to.')
-@click.option('--plots/--no-plots', is_flag=True, default=None, help='Generate \
+@click.option('--plots/--no-plots',
+              is_flag=True,
+              default=None,
+              help='Generate \
 bw/iops/lat logs and plots in their lifetime.')
-@click.option('--dryrun', is_flag=True, default=None, help='Print the commands \
+@click.option('--dryrun',
+              is_flag=True,
+              default=None,
+              help='Print the commands \
 that would be executed, but do not execute them.')
-def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct, numjobs,
-        rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
+def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
+        numjobs, rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
     """Command line interface.
 
     Take arguments from CLI, load default parameters from yaml file.
