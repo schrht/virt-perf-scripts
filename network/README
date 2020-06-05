@@ -1,6 +1,4 @@
 #######
-  0. env DIR. Guide how to prepare VMs and setup ENV automatically after pareparion
-
-  1. Run controller.sh in VM1 will setup ENV in VM2 and VM3
-
-  2. Run "virt_netperf_test.py $VM3_IP" in VM2 to start test
+	0. env DIR. Guide how to meet requirements.
+  	1. Run "python virt-netperf_test.py $remote-ip" in a machine as netperf.
+	2. Run "python result-convert.py" in above machine.
