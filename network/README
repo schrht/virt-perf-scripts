@@ -1,4 +1,5 @@
 #######
-	0. env DIR. Guide how to meet requirements.
-  	1. Run "python virt-netperf_test.py $remote-ip" in a machine as netperf.
-	2. Run "python result-convert.py" in above machine.
+	0. There is NO any relationship between platforms and scripts.
+	1. env DIR. Guide how to meet requirements.
+  	2. Run "python virt-netperf_test.py $remote-ip" in a machine as netperf.
+	3. Run "python result-convert.py" in above machine.
