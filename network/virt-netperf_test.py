@@ -51,9 +51,6 @@ class NetperfTestRunner:
                 log_path: str
                     Where the *.nplog files will be saved to.
                      Example: "/root/tmp/netperf_log/"
-                 install_path: str
-                     The full tools installation script.
-                     Example: "/root/tools_installation.sh"
                  ssh_key: str
                      SSH KEY to access any target VM as they own the same SSH KEY.
                      Example: "~/.ssh/id_rsa_private"
@@ -91,15 +88,6 @@ class NetperfTestRunner:
             exit(1)
         else:
             self.log_path = params['log_path']
-
-        if 'install_path' not in params:
-            print('[ERROR] Missing required params: params[install_path]')
-            exit(1)
-        elif type(params['install_path']) not in (type(u''), type(b'')):
-            print('[ERROR] params[install_path] must be string.')
-            exit(1)
-        else:
-            self.install_path = params['install_path']
 
         if 'ssh_key' not in params:
             print('[ERROR] Missing required params: params[ssh_key]')
@@ -343,14 +331,12 @@ class NetperfTestRunner:
             os.system(command)
 
 
-def get_cli_params(log_path, install_path, ssh_key, exe_time, driver, instance, rounds, data_modes, rr_size, m_size):
+def get_cli_params(log_path, ssh_key, exe_time, driver, instance, rounds, data_modes, rr_size, m_size):
     """Get parameters from the CLI."""
     cli_params = {}
 
     if log_path:
         cli_params['log_path'] = log_path
-    if install_path:
-        cli_params['install_path'] = install_path
     if ssh_key:
         cli_params['ssh_key'] = ssh_key
     if exe_time:
@@ -409,7 +395,6 @@ def run_netperf_test(rmt_ip, params={}):
 @click.command()
 @click.argument('rmt_ip')
 @click.option('--log_path', help='DIR stores logs.')
-@click.option('--install_path', help='The script installs tools required.')
 @click.option('--ssh_key', help='The SSH KEY is used to access any VM.')
 @click.option('--exe_time', type=click.IntRange(1, 60), help='How much time current netperf case run.')
 @click.option('--driver', help='NIC types include vmxnet3 / e1000 / e1000e. Current ONLY supports vmxnet3.')
@@ -418,14 +403,14 @@ def run_netperf_test(rmt_ip, params={}):
 @click.option('--data_modes', help='[NETPERF] Test modes includes STREAM and RR and CRR')
 @click.option('--rr_size', help='[NETPERF] RR size when test RR mode')
 @click.option('--m_size', help='[NETPERF] M size when test STREAM mode')
-def cli(rmt_ip, log_path, install_path, ssh_key, exe_time,
+def cli(rmt_ip, log_path, ssh_key, exe_time,
         driver, instance, rounds, data_modes, rr_size, m_size):
     """Command line interface.
     Take arguments from CLI, load default parameters from yaml file.
     Then initialize the netperf test.
     """
     # Read user specified parameters from CLI
-    cli_params = get_cli_params(log_path, install_path, ssh_key,
+    cli_params = get_cli_params(log_path, ssh_key,
                                 exe_time, driver, instance, rounds, data_modes, rr_size, m_size)
     print("DEBUG: Params from CLI")
     print(cli_params)
