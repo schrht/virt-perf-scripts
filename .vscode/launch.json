@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: GenerateNetworkBenchmarkReport.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/network/GenerateNetworkBenchmarkReport.py",
+            "console": "integratedTerminal",
+            "pythonPath": "${command:python.interpreterPath}",
+            "args": [
+                "--base_csv",
+                "network/results/flent_report-base.csv",
+                "--test_csv",
+                "network/results/flent_report-test.csv",
+                "--report_csv",
+                "network/results/flent_benchmark_report.csv"
+            ]
+        },
+        {
             "name": "Python: GenerateNetworkTestReport.py",
             "type": "python",
             "request": "launch",

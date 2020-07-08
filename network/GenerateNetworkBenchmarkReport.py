@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Generate FIO Benchmark Report.
+"""Generate flent Benchmark Report.
 
 History:
-v1.0    2018-03-16  charles.shih  Finish all the functions.
-v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
-v1.1    2018-08-09  charles.shih  Update the Command Line Interface.
-v1.2    2018-08-20  charles.shih  Support Python 3.
-v1.2.1  2019-07-08  charles.shih  Use minor and major to indicate the results.
-v1.3    2019-07-29  charles.shih  Calculate 90% complete latency number.
+v0.1    2020-05-20  charles.shih  Init version.
+v0.2    2020-07-06  charles.shih  Basic function completed.
 """
 
 import click
@@ -17,10 +13,10 @@ from scipy.stats import ttest_rel
 from scipy.stats import ttest_ind
 
 
-class FioBenchmarkReporter():
-    """FIO Benchmark Reporter.
+class FlentBenchmarkReporter():
+    """Flent Benchmark Reporter.
 
-    This class used to generate the fio benchmark report. As basic functions:
+    This class used to generate the flent benchmark report. As basic functions:
     1. It loads base samples and test samples from csv files;
     2. It calculates the mean, std dev and significance;
     3. It generates the report and dump to a csv file;
@@ -89,18 +85,18 @@ class FioBenchmarkReporter():
     def _add_columns_into_report_dataframe(self, label):
         """Add a serial of columns into report DataFrame."""
         # Add a serial of columns for the specified label
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-BASE-AVG', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-BASE-%SD', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-TEST-AVG', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-TEST-%SD', 0)
+        self.df_report.insert(len(self.df_report.columns), label + '-BASE-AVG',
+                              0)
+        self.df_report.insert(len(self.df_report.columns), label + '-BASE-%SD',
+                              0)
+        self.df_report.insert(len(self.df_report.columns), label + '-TEST-AVG',
+                              0)
+        self.df_report.insert(len(self.df_report.columns), label + '-TEST-%SD',
+                              0)
         self.df_report.insert(len(self.df_report.columns), label + '-%DIFF', 0)
         self.df_report.insert(len(self.df_report.columns), label + '-SIGN', 0)
-        self.df_report.insert(
-            len(self.df_report.columns), label + '-CONCLUSION', 0)
+        self.df_report.insert(len(self.df_report.columns),
+                              label + '-CONCLUSION', 0)
 
         return None
 
@@ -108,22 +104,17 @@ class FioBenchmarkReporter():
         """Create the report DataFrame."""
         # Create the report DataFrame according to self.df_test
         self.df_report = self.df_test[[
-            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
+            'Backend', 'Driver', 'Format', 'Type', 'MSize(Kbits)'
         ]].drop_duplicates()
 
         # Sort the report DataFrame and reset its index
-        self.df_report = self.df_report.sort_values(by=[
-            'Backend', 'Driver', 'Format', 'RW', 'BS', 'IODepth', 'Numjobs'
-        ])
+        self.df_report = self.df_report.sort_values(
+            by=['Backend', 'Driver', 'Format', 'Type', 'MSize(Kbits)'])
         self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
         # Add the new columns to report DataFrame
-        # [Note] Units: BW(MiB/s) / IOPS / LAT(ms) / CLAT90(ms) / Util(%)
+        # [Note] Units: BW(Mbits/s)
         self._add_columns_into_report_dataframe('BW')
-        self._add_columns_into_report_dataframe('IOPS')
-        self._add_columns_into_report_dataframe('LAT')
-        self._add_columns_into_report_dataframe('CLAT90')
-        self._add_columns_into_report_dataframe('Util')
 
         return None
 
@@ -220,8 +211,8 @@ class FioBenchmarkReporter():
 
         # Calculate and fill the %DIFF of the test samples againest base
         series[label + '-%DIFF'] = (
-            series[label + '-TEST-AVG'] - series[label + '-BASE-AVG']
-        ) / series[label + '-BASE-AVG'] * 100
+            series[label + '-TEST-AVG'] -
+            series[label + '-BASE-AVG']) / series[label + '-BASE-AVG'] * 100
 
         # Calculate and fill the Significance
         series[label + '-SIGN'] = self._get_significance(
@@ -230,8 +221,8 @@ class FioBenchmarkReporter():
         # Calculate and fill the Conclusion
         series[label + '-CONCLUSION'] = self._get_conclusion(
             series[label + '-BASE-%SD'], series[label + '-TEST-%SD'],
-            series[label + '-%DIFF'], series[label
-                                             + '-SIGN'], higher_is_better)
+            series[label + '-%DIFF'], series[label + '-SIGN'],
+            higher_is_better)
 
         return None
 
@@ -245,32 +236,21 @@ class FioBenchmarkReporter():
                 (self.df_base['Backend'] == series['Backend'])
                 & (self.df_base['Driver'] == series['Driver'])
                 & (self.df_base['Format'] == series['Format'])
-                & (self.df_base['RW'] == series['RW'])
-                & (self.df_base['BS'] == series['BS'])
-                & (self.df_base['IODepth'] == series['IODepth'])
-                & (self.df_base['Numjobs'] == series['Numjobs'])]
+                & (self.df_base['Type'] == series['Type'])
+                & (self.df_base['MSize(Kbits)'] == series['MSize(Kbits)'])]
 
             # Look up the sub DataFrame from the test samples
             my_sub_test = self.df_test[
                 (self.df_test['Backend'] == series['Backend'])
                 & (self.df_test['Driver'] == series['Driver'])
                 & (self.df_test['Format'] == series['Format'])
-                & (self.df_test['RW'] == series['RW'])
-                & (self.df_test['BS'] == series['BS'])
-                & (self.df_test['IODepth'] == series['IODepth'])
-                & (self.df_test['Numjobs'] == series['Numjobs'])]
+                & (self.df_test['Type'] == series['Type'])
+                & (self.df_test['MSize(Kbits)'] == series['MSize(Kbits)'])]
 
             # Calculate the statistics
-            self._calculate_and_fill_report_series(
-                series, my_sub_base, my_sub_test, 'BW', 'BW(MiB/s)', True)
-            self._calculate_and_fill_report_series(
-                series, my_sub_base, my_sub_test, 'IOPS', 'IOPS', True)
-            self._calculate_and_fill_report_series(
-                series, my_sub_base, my_sub_test, 'LAT', 'LAT(ms)', False)
-            self._calculate_and_fill_report_series(
-                series, my_sub_base, my_sub_test, 'CLAT90', 'CLAT90(ms)', False)
-            self._calculate_and_fill_report_series(
-                series, my_sub_base, my_sub_test, 'Util', 'Util(%)', True)
+            self._calculate_and_fill_report_series(series, my_sub_base,
+                                                   my_sub_test, 'BW',
+                                                   'BW(Mbits/s)', True)
 
             # Show current series
             print(series)
@@ -348,12 +328,12 @@ class FioBenchmarkReporter():
         return 0
 
 
-def generate_fio_benchmark_report(base_csv, test_csv, report_csv):
-    """Generate FIO benchmark report."""
-    fiobenchreporter = FioBenchmarkReporter()
+def generate_flent_benchmark_report(base_csv, test_csv, report_csv):
+    """Generate flent benchmark report."""
+    flentbenchreporter = FlentBenchmarkReporter()
 
     # Load base and test samples
-    return_value = fiobenchreporter.load_samples({
+    return_value = flentbenchreporter.load_samples({
         'base_csv': base_csv,
         'test_csv': test_csv
     })
@@ -361,10 +341,10 @@ def generate_fio_benchmark_report(base_csv, test_csv, report_csv):
         exit(1)
 
     # Generate benchmark report
-    fiobenchreporter.generate_report()
+    flentbenchreporter.generate_report()
 
     # Dump the report as CSV file
-    return_value = fiobenchreporter.report_to_csv({'report_csv': report_csv})
+    return_value = flentbenchreporter.report_to_csv({'report_csv': report_csv})
     if return_value:
         exit(1)
 
@@ -372,18 +352,15 @@ def generate_fio_benchmark_report(base_csv, test_csv, report_csv):
 
 
 @click.command()
-@click.option(
-    '--base_csv',
-    type=click.Path(exists=True),
-    help='Specify the CSV file of the base samples.')
-@click.option(
-    '--test_csv',
-    type=click.Path(exists=True),
-    help='Specify the CSV file of the test samples.')
-@click.option(
-    '--report_csv',
-    type=click.Path(),
-    help='Specify the CSV file to store the benchmark report.')
+@click.option('--base_csv',
+              type=click.Path(exists=True),
+              help='Specify the CSV file of the base samples.')
+@click.option('--test_csv',
+              type=click.Path(exists=True),
+              help='Specify the CSV file of the test samples.')
+@click.option('--report_csv',
+              type=click.Path(),
+              help='Specify the CSV file to store the benchmark report.')
 def cli(base_csv, test_csv, report_csv):
     """Command Line Interface."""
     # Parse and check the parameters
@@ -391,8 +368,8 @@ def cli(base_csv, test_csv, report_csv):
         print('[ERROR] Missing parameter, use "--help" to check the usage.')
         exit(1)
 
-    # Generate FIO benchmark report
-    generate_fio_benchmark_report(base_csv, test_csv, report_csv)
+    # Generate flent benchmark report
+    generate_flent_benchmark_report(base_csv, test_csv, report_csv)
 
 
 if __name__ == '__main__':
