@@ -4,8 +4,9 @@
 History:
 v0.1    2020-05-20  charles.shih  Init version
 v0.2    2020-07-06  charles.shih  Basic function completed
-v0.3    2020-07-13  charles.shih  Define benchmark report by yuml
+v0.3    2020-07-13  charles.shih  Define benchmark report by yaml
 v0.4    2020-07-13  charles.shih  Support renaming KEY columns
+v0.5    2020-07-13  charles.shih  Support customizing KPI columns
 """
 
 import os
@@ -29,6 +30,9 @@ class FlentBenchmarkReporter():
         df_base: a DataFrame to store base samples.
         df_test: a DataFrame to store test samples.
         df_report: a DataFrame to store the benchmark report.
+        config: the user config defined in the yaml file.
+        keys: the user config data for the KEYs.
+        kpis: the user config data for the KPIs.
 
     """
     def __init__(self):
@@ -40,7 +44,7 @@ class FlentBenchmarkReporter():
             content = yaml.safe_load(f)
             self.config = content['FlentBenchmarkReporter']
 
-        self.key_columns = []
+        self.keys = []
         for key_attr in self.config['keys']:
             key = {}
             if type(key_attr) is dict:
@@ -52,9 +56,15 @@ class FlentBenchmarkReporter():
             else:
                 key['source_label'] = key['target_label'] = key_attr
                 key['target_unit'] = None
-            self.key_columns.append(key)
+            self.keys.append(key)
 
-        # self.kpi_columns = []
+        self.kpis = []
+        for kpi_attr in self.config['kpis']:
+            kpi = {}
+            kpi.update(self.config['kpi_defaults'])
+            kpi['target_unit'] = None
+            kpi.update(kpi_attr)
+            self.kpis.append(kpi)
 
         # The DataFrame to store base samples and test samples
         self.df_base = self.df_test = None
@@ -113,8 +123,8 @@ class FlentBenchmarkReporter():
     def _create_report_dataframe(self):
         """Create report DataFrame based on test DataFrame."""
         # Get KEYs
-        source_keys = [x['source_label'] for x in self.key_columns]
-        target_keys = [x['target_label'] for x in self.key_columns]
+        source_keys = [x['source_label'] for x in self.keys]
+        target_keys = [x['target_label'] for x in self.keys]
 
         # Tailer a new DataFrame by KEYs from test DataFrame
         self.df_report = self.df_test[source_keys].drop_duplicates()
@@ -129,22 +139,19 @@ class FlentBenchmarkReporter():
         self.df_report = self.df_report.sort_values(by=target_keys)
         self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
-        # Add the KPI columns into report DataFrame
-        for kpi_attr in self.config['kpis']:
-            label = kpi_attr['target_label']
-
-            # Add expended columns for the specified label
+        # Add the expanded KPI columns into report DataFrame
+        for kpi in self.kpis:
             expansion = [
                 'BASE-AVG', 'BASE-%SD', 'TEST-AVG', 'TEST-%SD', '%DIFF',
                 'SIGN', 'CONCLUSION'
             ]
             for suffix in expansion:
                 self.df_report.insert(len(self.df_report.columns),
-                                      label + '-' + suffix, 0)
+                                      kpi['target_label'] + '-' + suffix, 0)
 
         return None
 
-    def _get_significance(self, array1, array2, paired):
+    def _get_significance(self, array1, array2, paired=False):
         """Get the significance of t-test.
 
         Args:
@@ -166,8 +173,15 @@ class FlentBenchmarkReporter():
 
         return significance
 
-    def _get_conclusion(self, base_pct_dev, test_pct_dev, pct_diff,
-                        significance, higher_is_better):
+    def _get_conclusion(self,
+                        base_pct_dev,
+                        test_pct_dev,
+                        pct_diff,
+                        significance,
+                        higher_is_better,
+                        max_percent_dev=10,
+                        regression_threshold=5,
+                        confidence_threshold=0.95):
         """Get the conclusion of the specified KPI.
 
         To reach the conclusion, we need to consider the following conditions:
@@ -179,14 +193,18 @@ class FlentBenchmarkReporter():
             base_pct_dev: float, the base %SD;
             test_pct_dev: float, the test %SD;
             pct_diff: float, the %DIFF of the KPI;
-            significance: float, 0 <= x <= 1, the Significance;
+            significance: float [0, 1], the Significance;
             higher_is_better: flag, used to adjust improvment or regression.
+            max_percent_dev: int [0, 100], threshold for the maxium %SD.
+            regression_threshold: int [0, 100], threshold for the regression.
+            confidence_threshold: float [0, 1], threshold for the confidence.
 
         Returns:
-            'Data Invalid': the input data is invalid;
-            'Variance Too Large': the %SD beyonds MAX_PCT_DEV;
-            'No Difference': the %DIFF is zero;
-            'No Significance': the Significance less than CONFIDENCE_THRESHOLD;
+            'Data Invalid':         the input data is invalid;
+            'Variance Too Large':   the %SD beyonds MAX_PCT_DEV;
+            'No Difference':        the %DIFF is zero;
+            'No Significance':      the Significance less than the
+                                    CONFIDENCE_THRESHOLD;
             'Major Improvement' and 'Major Regression':
                 the Significance beyonds CONFIDENCE_THRESHOLD and %DIFF
                 beyonds REGRESSION_THRESHOLD;
@@ -195,20 +213,21 @@ class FlentBenchmarkReporter():
                 is below REGRESSION_THRESHOLD;
 
         """
-        MAX_PCT_DEV = 10
-        REGRESSION_THRESHOLD = 5
-        CONFIDENCE_THRESHOLD = 0.95
+        MAX_PCT_DEV = max_percent_dev
+        REGRESSION_THRESHOLD = regression_threshold
+        CONFIDENCE_THRESHOLD = confidence_threshold
 
-        if np.isnan(base_pct_dev) or np.isnan(test_pct_dev):
+        if np.isnan(base_pct_dev) or np.isnan(test_pct_dev) or np.isnan(
+                pct_diff) or np.isnan(significance):
             return 'Data Invalid'
 
         if base_pct_dev > MAX_PCT_DEV or test_pct_dev > MAX_PCT_DEV:
             return 'Variance Too Large'
 
-        if np.isnan(pct_diff) or pct_diff == 0:
+        if pct_diff == 0:
             return 'No Difference'
 
-        if np.isnan(significance) or significance < CONFIDENCE_THRESHOLD:
+        if significance < CONFIDENCE_THRESHOLD:
             return 'No Significance'
 
         if (higher_is_better and pct_diff > 0) or (not higher_is_better
@@ -223,10 +242,11 @@ class FlentBenchmarkReporter():
             else:
                 return 'Minor Regression'
 
-    def _calculate_and_fill_report_series(self, series, df_base, df_test,
-                                          label, source_label,
-                                          higher_is_better):
-        """Calculate the statistics and fill the Series for specified label."""
+    def _calculate_kpi_and_fill_series(self, series, df_base, df_test, label,
+                                       source_label, higher_is_better,
+                                       max_percent_dev, regression_threshold,
+                                       confidence_threshold):
+        """Calculate the statistics and fill the Series for specified KPI."""
         # Calculate and fill the average and %SD of the base and test samples
         series[label + '-BASE-AVG'] = df_base[source_label].mean()
         series[label + '-BASE-%SD'] = df_base[source_label].std(
@@ -242,13 +262,14 @@ class FlentBenchmarkReporter():
 
         # Calculate and fill the Significance
         series[label + '-SIGN'] = self._get_significance(
-            df_base[source_label], df_test[source_label], False)
+            df_base[source_label], df_test[source_label])
 
         # Calculate and fill the Conclusion
         series[label + '-CONCLUSION'] = self._get_conclusion(
             series[label + '-BASE-%SD'], series[label + '-TEST-%SD'],
             series[label + '-%DIFF'], series[label + '-SIGN'],
-            higher_is_better)
+            higher_is_better, max_percent_dev, regression_threshold,
+            confidence_threshold)
 
         return None
 
@@ -263,7 +284,7 @@ class FlentBenchmarkReporter():
             sub_base = self.df_base
 
             # Filter the DataFrames by the KEYs
-            for key in self.key_columns:
+            for key in self.keys:
                 source_label = key['source_label']
                 target_label = key['target_label']
                 target_value = series[target_label]
@@ -273,16 +294,12 @@ class FlentBenchmarkReporter():
                 sub_base = sub_base[sub_base[source_label] == target_value]
 
             # Calculate KPIs
-            for kpi_attr in self.config['kpis']:
-                if 'higher_is_better' in kpi_attr.keys():
-                    higher_is_better = kpi_attr['higher_is_better']
-                else:
-                    higher_is_better = self.config['defaults'][
-                        'higher_is_better']
-
-                self._calculate_and_fill_report_series(
-                    series, sub_base, sub_test, kpi_attr['target_label'],
-                    kpi_attr['source_label'], higher_is_better)
+            for kpi in self.kpis:
+                self._calculate_kpi_and_fill_series(
+                    series, sub_base, sub_test, kpi['target_label'],
+                    kpi['source_label'], kpi['higher_is_better'],
+                    kpi['max_percent_dev'], kpi['regression_threshold'],
+                    kpi['confidence_threshold'])
 
             # Show current series
             print(series)
