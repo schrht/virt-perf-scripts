@@ -28,9 +28,11 @@ v2.3    2019-05-13  charles.shih  Set the lowest value as disk utilization if
 v2.3.1  2019-05-13  charles.shih  Minor changes to the output message.
 v2.4    2019-07-29  charles.shih  Collect 90% complete latency number.
 v2.5    2019-12-30  charles.shih  Support handling fiolog in tarballs.
-v2.6    2019-12-30  charles.shih  Fix a bug of parsing disk utils (buffered IO).
-v2.6.1  2019-12-30  charles.shih  Add "NaN" to the report if disk utils unavailable.
-v2.6.2  2019-12-30  charles.shih  Remove temporary files after parsing fiolog.
+v2.6    2019-12-30  charles.shih  Fix a bug of parsing disk utils (buffered IO)
+v2.6.1  2019-12-30  charles.shih  Add "NaN" to the report if disk utils
+                                  unavailable
+v2.6.2  2019-12-30  charles.shih  Remove temporary files after parsing fiolog
+v2.7    2020-07-13  charles.shih  Fix a bug to handle fio-3.19 json outputs
 """
 
 import json
@@ -196,7 +198,8 @@ class FioTestReporter():
             if filename.endswith('.tar.gz') and os.path.isfile(filename):
                 os.system('mkdir -p {0}'.format(tmpfolder))
                 os.system('tar xf {1} -C {0}'.format(tmpfolder, filename))
-                filename = tmpfolder + os.sep + fname.replace('.tar.gz', '.fiolog')
+                filename = tmpfolder + os.sep + fname.replace(
+                    '.tar.gz', '.fiolog')
 
             if filename.endswith('.fiolog') and os.path.isfile(filename):
                 (result, raw_data) = self._get_raw_data_from_fio_log(filename)
@@ -262,10 +265,16 @@ class FioTestReporter():
             perf_kpi['lat'] = perf_kpi['r-lat'] + perf_kpi['w-lat']
 
             # The unit of "clat" was "ns", convert to "ms"
-            perf_kpi['r-clat90'] = raw_data['jobs'][0]['read']['clat_ns'][
-                'percentile']['90.000000'] / 1000000.0
-            perf_kpi['w-clat90'] = raw_data['jobs'][0]['write']['clat_ns'][
-                'percentile']['90.000000'] / 1000000.0
+            if 'percentile' in raw_data['jobs'][0]['read']['clat_ns'].keys():
+                perf_kpi['r-clat90'] = raw_data['jobs'][0]['read']['clat_ns'][
+                    'percentile']['90.000000'] / 1000000.0
+            else:
+                perf_kpi['r-clat90'] = 0.0
+            if 'percentile' in raw_data['jobs'][0]['write']['clat_ns'].keys():
+                perf_kpi['w-clat90'] = raw_data['jobs'][0]['write']['clat_ns'][
+                    'percentile']['90.000000'] / 1000000.0
+            else:
+                perf_kpi['w-clat90'] = 0.0
             perf_kpi['clat90'] = perf_kpi['r-clat90'] + perf_kpi['w-clat90']
 
             # Get util% of the disk if there is
@@ -287,8 +296,9 @@ class FioTestReporter():
                 dict = eval(raw_data['jobs'][0]['job options']['description'])
                 perf_kpi.update(dict)
             except Exception as err:
-                print('[ERROR] Error while parsing additional information: %s'
-                      % err)
+                print(
+                    '[ERROR] Error while parsing additional information: %s' %
+                    err)
 
             if 'driver' not in perf_kpi:
                 perf_kpi['driver'] = 'NaN'
@@ -350,31 +360,30 @@ class FioTestReporter():
 
         """
         # Create report DataFrame from self.perf_kpi_list
-        self.df_report = pd.DataFrame(
-            self.perf_kpi_list,
-            columns=[
-                'backend', 'driver', 'format', 'rw', 'bs', 'iodepth',
-                'numjobs', 'round', 'bw', 'iops', 'lat', 'clat90', 'util'
-            ])
+        self.df_report = pd.DataFrame(self.perf_kpi_list,
+                                      columns=[
+                                          'backend', 'driver', 'format', 'rw',
+                                          'bs', 'iodepth', 'numjobs', 'round',
+                                          'bw', 'iops', 'lat', 'clat90', 'util'
+                                      ])
 
         # Rename the columns of the report DataFrame
-        self.df_report.rename(
-            columns={
-                'backend': 'Backend',
-                'driver': 'Driver',
-                'format': 'Format',
-                'rw': 'RW',
-                'bs': 'BS',
-                'iodepth': 'IODepth',
-                'numjobs': 'Numjobs',
-                'round': 'Round',
-                'bw': 'BW(MiB/s)',
-                'iops': 'IOPS',
-                'lat': 'LAT(ms)',
-                'clat90': 'CLAT90(ms)',
-                'util': 'Util(%)'
-            },
-            inplace=True)
+        self.df_report.rename(columns={
+            'backend': 'Backend',
+            'driver': 'Driver',
+            'format': 'Format',
+            'rw': 'RW',
+            'bs': 'BS',
+            'iodepth': 'IODepth',
+            'numjobs': 'Numjobs',
+            'round': 'Round',
+            'bw': 'BW(MiB/s)',
+            'iops': 'IOPS',
+            'lat': 'LAT(ms)',
+            'clat90': 'CLAT90(ms)',
+            'util': 'Util(%)'
+        },
+                              inplace=True)
 
         return None
 
@@ -466,10 +475,8 @@ def generate_fio_test_report(result_path, report_csv):
     fioreporter = FioTestReporter()
 
     # Load raw data from *.fiolog files
-    return_value = fioreporter.load_raw_data_from_fio_logs({
-        'result_path':
-        result_path
-    })
+    return_value = fioreporter.load_raw_data_from_fio_logs(
+        {'result_path': result_path})
     if return_value:
         exit(1)
 
@@ -482,9 +489,8 @@ def generate_fio_test_report(result_path, report_csv):
     fioreporter.generate_report_dataframe()
 
     # Dump the Dataframe as CSV file
-    return_value = fioreporter.report_dataframe_to_csv({
-        'report_csv': report_csv
-    })
+    return_value = fioreporter.report_dataframe_to_csv(
+        {'report_csv': report_csv})
     if return_value:
         exit(1)
 
@@ -492,14 +498,12 @@ def generate_fio_test_report(result_path, report_csv):
 
 
 @click.command()
-@click.option(
-    '--result_path',
-    type=click.Path(exists=True),
-    help='Specify the path where *.fiolog files are stored in.')
-@click.option(
-    '--report_csv',
-    type=click.Path(),
-    help='Specify the name of CSV file for fio test reports.')
+@click.option('--result_path',
+              type=click.Path(exists=True),
+              help='Specify the path where *.fiolog files are stored in.')
+@click.option('--report_csv',
+              type=click.Path(),
+              help='Specify the name of CSV file for fio test reports.')
 def cli(result_path, report_csv):
     """Command Line Interface."""
     # Parse and check the parameters
