@@ -5,6 +5,7 @@ History:
 v0.1    2020-05-20  charles.shih  Init version
 v0.2    2020-07-06  charles.shih  Basic function completed
 v0.3    2020-07-13  charles.shih  Define benchmark report by yuml
+v0.4    2020-07-13  charles.shih  Support renaming KEY columns
 """
 
 import os
@@ -38,6 +39,22 @@ class FlentBenchmarkReporter():
                   'r') as f:
             content = yaml.safe_load(f)
             self.config = content['FlentBenchmarkReporter']
+
+        self.key_columns = []
+        for key_attr in self.config['keys']:
+            key = {}
+            if type(key_attr) is dict:
+                key['source_label'] = key_attr['source_label']
+                key['target_label'] = key_attr['target_label']
+                key['target_unit'] = key_attr[
+                    'target_unit'] if 'target_unit' in key_attr.keys(
+                    ) else None
+            else:
+                key['source_label'] = key['target_label'] = key_attr
+                key['target_unit'] = None
+            self.key_columns.append(key)
+
+        # self.kpi_columns = []
 
         # The DataFrame to store base samples and test samples
         self.df_base = self.df_test = None
@@ -95,20 +112,21 @@ class FlentBenchmarkReporter():
 
     def _create_report_dataframe(self):
         """Create report DataFrame based on test DataFrame."""
-        # Get KEY columns
-        columns = []
-        for key_attr in self.config['keys']:
-            if type(key_attr) is dict:
-                label = key_attr['source_label']
-            else:
-                label = key_attr
-            columns.append(label)
+        # Get KEYs
+        source_keys = [x['source_label'] for x in self.key_columns]
+        target_keys = [x['target_label'] for x in self.key_columns]
 
         # Tailer a new DataFrame by KEYs from test DataFrame
-        self.df_report = self.df_test[columns].drop_duplicates()
+        self.df_report = self.df_test[source_keys].drop_duplicates()
+
+        # Rename the columns of the report DataFrame if needed
+        for source_key, target_key in zip(source_keys, target_keys):
+            if source_key != target_key:
+                self.df_report.rename(columns={source_key: target_key},
+                                      inplace=True)
 
         # Sort the report DataFrame and reset its index
-        self.df_report = self.df_report.sort_values(by=columns)
+        self.df_report = self.df_report.sort_values(by=target_keys)
         self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
         # Add the KPI columns into report DataFrame
@@ -236,25 +254,23 @@ class FlentBenchmarkReporter():
 
     def _complete_report_dataframe(self):
         """Complete the report DataFrame."""
-        # Correlate and get data for each series in report DataFrame
+        # Go through each series from the report DataFrame, get correlated
+        # data from the test and base DataFrames, calculate the KPIs and
+        # fill the results into report DataFrame.
         for (index, series) in self.df_report.iterrows():
-            # Get KEYs from config
-            keys = []
-            for key_attr in self.config['keys']:
-                if type(key_attr) is dict:
-                    label = key_attr['source_label']
-                else:
-                    label = key_attr
-                keys.append(label)
+            # Get correlated DataFrames
+            sub_test = self.df_test
+            sub_base = self.df_base
 
-            # Get KEYs filtered DataFrames
-            df_sub_test = self.df_test
-            for key in keys:
-                df_sub_test = df_sub_test[df_sub_test[key] == series[key]]
+            # Filter the DataFrames by the KEYs
+            for key in self.key_columns:
+                source_label = key['source_label']
+                target_label = key['target_label']
+                target_value = series[target_label]
 
-            df_sub_base = self.df_base
-            for key in keys:
-                df_sub_base = df_sub_base[df_sub_base[key] == series[key]]
+                # Update the DataFrames
+                sub_test = sub_test[sub_test[source_label] == target_value]
+                sub_base = sub_base[sub_base[source_label] == target_value]
 
             # Calculate KPIs
             for kpi_attr in self.config['kpis']:
@@ -265,7 +281,7 @@ class FlentBenchmarkReporter():
                         'higher_is_better']
 
                 self._calculate_and_fill_report_series(
-                    series, df_sub_base, df_sub_test, kpi_attr['target_label'],
+                    series, sub_base, sub_test, kpi_attr['target_label'],
                     kpi_attr['source_label'], higher_is_better)
 
             # Show current series

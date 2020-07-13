@@ -10,7 +10,8 @@ FlentBenchmarkReporter:
     - Format
     - Type
     - source_label: MSize(Kbits)
-      target_label: MSize(Kbits)s
+      target_label: MSize
+      target_unit: Kbits
   kpis:
     - source_label: BW(Mbits/s)
       target_label: BW
