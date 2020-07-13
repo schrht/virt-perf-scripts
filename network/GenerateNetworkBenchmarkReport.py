@@ -7,6 +7,7 @@ v0.2    2020-07-06  charles.shih  Basic function completed
 v0.3    2020-07-13  charles.shih  Define benchmark report by yaml
 v0.4    2020-07-13  charles.shih  Support renaming KEY columns
 v0.5    2020-07-13  charles.shih  Support customizing KPI columns
+v0.6    2020-07-13  charles.shih  Support appending units to the columns
 """
 
 import os
@@ -313,6 +314,24 @@ class FlentBenchmarkReporter():
         """Format the report DataFrame."""
         self.df_report = self.df_report.round(4)
         self.df_report = self.df_report.fillna('N/A')
+
+        # Add units to the columns
+        for key in self.keys:
+            if key['target_unit'] is not None:
+                pre_label = key['target_label']
+                post_label = '{0}({1})'.format(pre_label, key['target_unit'])
+                self.df_report.rename(columns={pre_label: post_label},
+                                      inplace=True)
+
+        for kpi in self.kpis:
+            if kpi['target_unit'] is not None:
+                for suffix in ('BASE-AVG', 'TEST-AVG'):
+                    pre_label = '{0}-{1}'.format(kpi['target_label'], suffix)
+                    post_label = '{0}({1})'.format(pre_label,
+                                                   kpi['target_unit'])
+                    self.df_report.rename(columns={pre_label: post_label},
+                                          inplace=True)
+
         return None
 
     def generate_report(self, params={}):
