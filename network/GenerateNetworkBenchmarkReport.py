@@ -2,11 +2,14 @@
 """Generate flent Benchmark Report.
 
 History:
-v0.1    2020-05-20  charles.shih  Init version.
-v0.2    2020-07-06  charles.shih  Basic function completed.
+v0.1    2020-05-20  charles.shih  Init version
+v0.2    2020-07-06  charles.shih  Basic function completed
+v0.3    2020-07-13  charles.shih  Define benchmark report by yuml
 """
 
+import os
 import click
+import yaml
 import pandas as pd
 import numpy as np
 from scipy.stats import ttest_rel
@@ -27,12 +30,20 @@ class FlentBenchmarkReporter():
         df_report: a DataFrame to store the benchmark report.
 
     """
+    def __init__(self):
+        """Load config and init benchmark reporter."""
+        # Load config
+        dirname = os.path.split(os.path.abspath(__file__))[0]
+        with open(dirname + os.sep + 'benchmark_reporter_config.yaml',
+                  'r') as f:
+            content = yaml.safe_load(f)
+            self.config = content['FlentBenchmarkReporter']
 
-    # The DataFrame to store base samples and test samples
-    df_base = df_test = None
+        # The DataFrame to store base samples and test samples
+        self.df_base = self.df_test = None
 
-    # The DataFrame to store the benchmark report
-    df_report = None
+        # The DataFrame to store the benchmark report
+        self.df_report = None
 
     def load_samples(self, params={}):
         """Load the base and test samples.
@@ -82,39 +93,36 @@ class FlentBenchmarkReporter():
 
         return 0
 
-    def _add_columns_into_report_dataframe(self, label):
-        """Add a serial of columns into report DataFrame."""
-        # Add a serial of columns for the specified label
-        self.df_report.insert(len(self.df_report.columns), label + '-BASE-AVG',
-                              0)
-        self.df_report.insert(len(self.df_report.columns), label + '-BASE-%SD',
-                              0)
-        self.df_report.insert(len(self.df_report.columns), label + '-TEST-AVG',
-                              0)
-        self.df_report.insert(len(self.df_report.columns), label + '-TEST-%SD',
-                              0)
-        self.df_report.insert(len(self.df_report.columns), label + '-%DIFF', 0)
-        self.df_report.insert(len(self.df_report.columns), label + '-SIGN', 0)
-        self.df_report.insert(len(self.df_report.columns),
-                              label + '-CONCLUSION', 0)
-
-        return None
-
     def _create_report_dataframe(self):
-        """Create the report DataFrame."""
-        # Create the report DataFrame according to self.df_test
-        self.df_report = self.df_test[[
-            'Backend', 'Driver', 'Format', 'Type', 'MSize(Kbits)'
-        ]].drop_duplicates()
+        """Create report DataFrame based on test DataFrame."""
+        # Get KEY columns
+        columns = []
+        for key_attr in self.config['keys']:
+            if type(key_attr) is dict:
+                label = key_attr['source_label']
+            else:
+                label = key_attr
+            columns.append(label)
+
+        # Tailer a new DataFrame by KEYs from test DataFrame
+        self.df_report = self.df_test[columns].drop_duplicates()
 
         # Sort the report DataFrame and reset its index
-        self.df_report = self.df_report.sort_values(
-            by=['Backend', 'Driver', 'Format', 'Type', 'MSize(Kbits)'])
+        self.df_report = self.df_report.sort_values(by=columns)
         self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
-        # Add the new columns to report DataFrame
-        # [Note] Units: BW(Mbits/s)
-        self._add_columns_into_report_dataframe('BW')
+        # Add the KPI columns into report DataFrame
+        for kpi_attr in self.config['kpis']:
+            label = kpi_attr['target_label']
+
+            # Add expended columns for the specified label
+            expansion = [
+                'BASE-AVG', 'BASE-%SD', 'TEST-AVG', 'TEST-%SD', '%DIFF',
+                'SIGN', 'CONCLUSION'
+            ]
+            for suffix in expansion:
+                self.df_report.insert(len(self.df_report.columns),
+                                      label + '-' + suffix, 0)
 
         return None
 
@@ -228,29 +236,37 @@ class FlentBenchmarkReporter():
 
     def _complete_report_dataframe(self):
         """Complete the report DataFrame."""
-        # Deal with every Series in report DataFrame
+        # Correlate and get data for each series in report DataFrame
         for (index, series) in self.df_report.iterrows():
+            # Get KEYs from config
+            keys = []
+            for key_attr in self.config['keys']:
+                if type(key_attr) is dict:
+                    label = key_attr['source_label']
+                else:
+                    label = key_attr
+                keys.append(label)
 
-            # Look up the sub DataFrame from the base samples
-            my_sub_base = self.df_base[
-                (self.df_base['Backend'] == series['Backend'])
-                & (self.df_base['Driver'] == series['Driver'])
-                & (self.df_base['Format'] == series['Format'])
-                & (self.df_base['Type'] == series['Type'])
-                & (self.df_base['MSize(Kbits)'] == series['MSize(Kbits)'])]
+            # Get KEYs filtered DataFrames
+            df_sub_test = self.df_test
+            for key in keys:
+                df_sub_test = df_sub_test[df_sub_test[key] == series[key]]
 
-            # Look up the sub DataFrame from the test samples
-            my_sub_test = self.df_test[
-                (self.df_test['Backend'] == series['Backend'])
-                & (self.df_test['Driver'] == series['Driver'])
-                & (self.df_test['Format'] == series['Format'])
-                & (self.df_test['Type'] == series['Type'])
-                & (self.df_test['MSize(Kbits)'] == series['MSize(Kbits)'])]
+            df_sub_base = self.df_base
+            for key in keys:
+                df_sub_base = df_sub_base[df_sub_base[key] == series[key]]
 
-            # Calculate the statistics
-            self._calculate_and_fill_report_series(series, my_sub_base,
-                                                   my_sub_test, 'BW',
-                                                   'BW(Mbits/s)', True)
+            # Calculate KPIs
+            for kpi_attr in self.config['kpis']:
+                if 'higher_is_better' in kpi_attr.keys():
+                    higher_is_better = kpi_attr['higher_is_better']
+                else:
+                    higher_is_better = self.config['defaults'][
+                        'higher_is_better']
+
+                self._calculate_and_fill_report_series(
+                    series, df_sub_base, df_sub_test, kpi_attr['target_label'],
+                    kpi_attr['source_label'], higher_is_better)
 
             # Show current series
             print(series)

@@ -1,0 +1,17 @@
+FlentBenchmarkReporter:
+  defaults:
+    higher_is_better: yes
+    max_percent_dev: 10
+    regression_threshold: 5
+    confidence_threshold: 0.95
+  keys:
+    - Backend
+    - Driver
+    - Format
+    - Type
+    - source_label: MSize(Kbits)
+      target_label: MSize(Kbits)s
+  kpis:
+    - source_label: BW(Mbits/s)
+      target_label: BW
+      target_unit: Mbits/s
