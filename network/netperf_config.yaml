@@ -1,10 +1,6 @@
 NetperfRunner:
   log_path: /tmp/netperf_result
-  install_path: /root/tools_installation.sh
-  ssh_key: ~/.ssh/id_rsa_private
   exe_time: 60
-  driver:
-    - vmxnet3
   instance:
     - 1
   rounds: 2
@@ -26,7 +22,6 @@ NetperfRunner:
     - 9000, 9000
     - 16384, 16384
     - 32768, 32768
-    - 65336, 65336
   m_size:
     - 32
     - 64
@@ -40,4 +35,3 @@ NetperfRunner:
     - 9000
     - 16384
     - 32768
-    - 65536
