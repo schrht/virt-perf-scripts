@@ -24,12 +24,12 @@
             "name": "Python: GenerateNetworkTestReport.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/network/GenerateNetworkTestReport.py",
+            "program": "${workspaceFolder}/network-np/GenerateNetworkTestReport.py",
             "console": "integratedTerminal",
             "pythonPath": "${command:python.interpreterPath}",
             "args": [
                 "--result_path",
-                "network/results"
+                "network-np/results"
             ]
         },
         {

@@ -108,3 +108,5 @@ block/samples/report.csv
 block/fio_result/
 block/run.py
 block/virt.yaml
+network/results
+network-np/results
