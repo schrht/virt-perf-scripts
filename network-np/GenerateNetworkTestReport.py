@@ -8,6 +8,7 @@ v0.1    2020-05-20  charles.shih  Init version.
 v0.2    2020-07-02  charles.shih  Basic function completed.
 v0.3    2020-07-20  charles.shih  Adapt the script for virt_netperf_test.
 v0.4    2020-07-21  charles.shih  Add KPI TransRate.
+v0.5    2020-07-21  charles.shih  Modify KPI Throughput, MSize, RRSize.
 """
 
 import json
@@ -188,15 +189,17 @@ class NetperfTestReporter():
         metadata = raw_data['metadata']
         perf_kpi['driver'] = metadata['DRIVER']
         perf_kpi['round'] = metadata['ROUNDS']
-        perf_kpi['msize'] = metadata['M_SIZE']
-        perf_kpi['rrsize'] = metadata[
-            'RR_SIZE'] if metadata['RR_SIZE'] != '' else 'NaN'
         perf_kpi['test'] = metadata['NAME']
 
         series_meta = metadata['SERIES_META']
         for name in series_meta.keys():
             if name in ('TCP_STREAM', 'TCP_MAERTS', 'UDP_STREAM',
                         'UDP_MAERTS'):
+
+                # Message / RR size
+                perf_kpi['msize'] = metadata['M_SIZE']
+                perf_kpi['rrsize'] = 'NaN'
+
                 # Bandwidth in "Mbits/s".
                 unit = series_meta[name]['THROUGHPUT_UNITS']
                 if unit != '10^6bits/s':
@@ -205,11 +208,13 @@ class NetperfTestReporter():
                 perf_kpi['transrate'] = series_meta[name]['TRANSACTION_RATE']
 
             elif name in ('TCP_RR', 'TCP_CRR', 'UDP_RR'):
+
+                # Message / RR size
+                perf_kpi['msize'] = 'NaN'
+                perf_kpi['rrsize'] = metadata['RR_SIZE']
+
                 # Bandwidth in "Mbits/s".
-                unit = series_meta[name]['THROUGHPUT_UNITS']
-                if unit != 'Trans/s':
-                    raise Exception('Bandwidth unit is not "Trans/s".')
-                perf_kpi['throughput'] = series_meta[name]['THROUGHPUT']
+                perf_kpi['throughput'] = 'NaN'
                 perf_kpi['transrate'] = series_meta[name]['TRANSACTION_RATE']
 
         return (0, perf_kpi)
@@ -272,8 +277,8 @@ class NetperfTestReporter():
             'msize': 'MSize',
             'rrsize': 'RRSize',
             'round': 'Round',
-            'throughput': 'Throughput(10^6bits/s;Trans/s)',
-            'transrate': 'TransRate'
+            'throughput': 'Throughput(10^6bits/s)',
+            'transrate': 'TransRate(per sec)'
         },
                               inplace=True)
 
