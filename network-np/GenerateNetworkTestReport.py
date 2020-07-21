@@ -7,10 +7,10 @@ History:
 v0.1    2020-05-20  charles.shih  Init version.
 v0.2    2020-07-02  charles.shih  Basic function completed.
 v0.3    2020-07-20  charles.shih  Adapt the script for virt_netperf_test.
+v0.4    2020-07-21  charles.shih  Add KPI TransRate.
 """
 
 import json
-import re
 import os
 import click
 import pandas as pd
@@ -202,12 +202,15 @@ class NetperfTestReporter():
                 if unit != '10^6bits/s':
                     raise Exception('Bandwidth unit is not "10^6bits/s".')
                 perf_kpi['throughput'] = series_meta[name]['THROUGHPUT']
-            elif name in ('TCP_RR', 'TCP_CRR', 'UDP_RR', 'UDP_CRR'):
+                perf_kpi['transrate'] = series_meta[name]['TRANSACTION_RATE']
+
+            elif name in ('TCP_RR', 'TCP_CRR', 'UDP_RR'):
                 # Bandwidth in "Mbits/s".
                 unit = series_meta[name]['THROUGHPUT_UNITS']
                 if unit != 'Trans/s':
                     raise Exception('Bandwidth unit is not "Trans/s".')
                 perf_kpi['throughput'] = series_meta[name]['THROUGHPUT']
+                perf_kpi['transrate'] = series_meta[name]['TRANSACTION_RATE']
 
         return (0, perf_kpi)
 
@@ -259,7 +262,7 @@ class NetperfTestReporter():
         self.df_report = pd.DataFrame(self.perf_kpi_list,
                                       columns=[
                                           'driver', 'test', 'msize', 'rrsize',
-                                          'round', 'throughput'
+                                          'round', 'throughput', 'transrate'
                                       ])
 
         # Rename the columns of the report DataFrame
@@ -269,7 +272,8 @@ class NetperfTestReporter():
             'msize': 'MSize',
             'rrsize': 'RRSize',
             'round': 'Round',
-            'throughput': 'Throughput(10^6bits/s;Trans/s)'
+            'throughput': 'Throughput(10^6bits/s;Trans/s)',
+            'transrate': 'TransRate'
         },
                               inplace=True)
 
