@@ -8,6 +8,7 @@ v0.3    2020-07-13  charles.shih  Define benchmark report by yaml
 v0.4    2020-07-13  charles.shih  Support renaming KEY columns
 v0.5    2020-07-13  charles.shih  Support customizing KPI columns
 v0.6    2020-07-13  charles.shih  Support appending units to the columns
+v0.7    2020-07-21  charles.shih  Update the logic of getting conclusion
 """
 
 import os
@@ -214,19 +215,32 @@ class FlentBenchmarkReporter():
                 is below REGRESSION_THRESHOLD;
 
         """
+
+        if max_percent_dev < 0 or max_percent_dev > 100:
+            raise 'Invalid parameter: max_percent_dev'
+        if regression_threshold < 0 or regression_threshold > 100:
+            raise 'Invalid parameter: regression_threshold'
+        if confidence_threshold < 0 or confidence_threshold > 1:
+            raise 'Invalid parameter: confidence_threshold'
+
         MAX_PCT_DEV = max_percent_dev
         REGRESSION_THRESHOLD = regression_threshold
         CONFIDENCE_THRESHOLD = confidence_threshold
 
-        if np.isnan(base_pct_dev) or np.isnan(test_pct_dev) or np.isnan(
-                pct_diff) or np.isnan(significance):
+        if np.isnan(pct_diff):
+            return np.nan
+
+        if pct_diff == 0:
+            return 'No Difference'
+
+        if np.isnan(significance) or significance < 0 or significance > 1:
+            return 'Data Invalid'
+
+        if base_pct_dev < 0 or test_pct_dev < 0:
             return 'Data Invalid'
 
         if base_pct_dev > MAX_PCT_DEV or test_pct_dev > MAX_PCT_DEV:
             return 'Variance Too Large'
-
-        if pct_diff == 0:
-            return 'No Difference'
 
         if significance < CONFIDENCE_THRESHOLD:
             return 'No Significance'
@@ -313,7 +327,7 @@ class FlentBenchmarkReporter():
     def _format_report_dataframe(self):
         """Format the report DataFrame."""
         self.df_report = self.df_report.round(4)
-        self.df_report = self.df_report.fillna('N/A')
+        self.df_report = self.df_report.fillna('NaN')
 
         # Add units to the columns
         for key in self.keys:
