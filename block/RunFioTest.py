@@ -42,6 +42,7 @@ v2.1.1  2020-01-02  charles.shih  Add switch for technical preview features.
 v2.2    2020-01-03  charles.shih  Use customized plots generator.
 v2.2.1  2020-03-13  charles.shih  PEP-8 Formatting.
 v2.3    2020-07-22  charles.shih  Name all files uniformly.
+v2.4    2020-07-22  charles.shih  Technical Preview, wait before collection.
 """
 
 import os
@@ -328,6 +329,9 @@ class FioTestRunner:
             # Technical Preview: Collect CPU idleness
             if support_idleness and not support_sar:
                 command += ' --idle-prof=percpu'
+
+            # Technical Preview: Wait before collection
+            command += ' --ramp_time=20'
 
             # Generate bw/iops/lat logs in their lifetime for the plots
             if self.plots:
