@@ -3,7 +3,7 @@ NetperfRunner:
   exe_time: 60
   instance:
     - 1
-  rounds: 2
+  rounds: 5
   data_modes:
     - TCP_STREAM
     - TCP_RR

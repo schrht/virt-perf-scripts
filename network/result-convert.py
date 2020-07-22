@@ -36,12 +36,12 @@ print("DEBUG: local_host %s" % local_host)
 # Netserver host ip.
 #remote_host = ""
 # Main network performace output.
-output_format=""
 rr_size=""
 m_size=""
 
+
 # Check logs path.
-log_path = "/tmp/netperf_result_test/"
+log_path = "/tmp/netperf_result/"
 if not os.path.exists(log_path):
 	print("WARNING: %s doesn't exist!" % log_path)
 	sys.exit(1)
@@ -58,6 +58,7 @@ else:
 
 # Handle every log. Convert it to a json file.
 for l in logs:
+    output_format = []
     print("INFO: Handle file: %s" % l)
 
     # Current test case name
@@ -81,41 +82,34 @@ for l in logs:
     with open (os.path.join(log_path, l), "r") as f:
         lines=f.readlines()
 
-    # If logs lines < 35, maybe it can't capture netperf output.
-
     print("debug: lines %s" % lines)
+
+    keys=[k for k in range(0, len(lines))]
+    result={k:v for k, v in zip(keys, lines[::-1])}
+    # Last 26 lines incldues netperf output
+    for i in range(26):
+        output_format.append(result[i].replace("\n", ""))
+
+    new_out = []
+    # Make output_format like key: value
+    for i in output_format:
+        new_out.append(i.replace("=", ":"))
+        
+    output_format = new_out
+    print("DEBUG: output_format: %s" % output_format)
+
     new_lines=[]
     keys=[]
     values=[]
-    for n in lines:
-        n=n.strip("\n")
-        n=n.replace("=", ":")
-        keys.append(n.split(":")[0])
-        values.append(n.split(":")[1])
-
-    print(keys)
-    print(values)
-    output_format = dict(zip(keys,values))
-    print("debug: output_format: %s" % output_format)
-
+    for i in output_format:
+        keys.append(i.split(":")[0])
+        values.append(i.split(":")[1])
+    
+    new_format = dict(zip(keys,values))
+    print("debug new %s" % new_format)
 	    
     template2 = {
 	"metadata": {
-            "BATCH_NAME": "n/a",
-            "BATCH_TIME": "n/a",
-            "BATCH_TITLE": "n/a",
-            "BATCH_UUID": "n/a",
-            "DATA_FILENAME": l,
-            "EGRESS_INFO": "n/a",
-            "FAILED_RUNNERS": 0,
-            "FLENT_VERSION": "n/a",
-            "HOST": "n/a",
-            "HOSTS": "n/a",
-            "HTTP_GETTER_DNS": "n/a",
-            "HTTP_GETTER_URLLIST": "n/a",
-            "HTTP_GETTER_WORKERS": "n/a",
-            "IP_VERSION": 4,
-            "KERNEL_NAME": "Linux",
             "RELEASE": release,
             "KERNEL_RELEASE": kernel,
             "DRIVER": driver,
@@ -128,32 +122,10 @@ for l in logs:
             "CPU_COUNT": cpu,
             "NAME": cur_case,
             "TIMESTAMP": timestamp,
-            "LENGTH": 60,
-            "MODULE_VERSIONS": "n/a",
-            "NOTE": "n/a",
-            "REMOTE_METADATA": "n/a",
             "SERIES_META": {
-	        "Ping (ms) ICMP": "n/a",
-	       	"test_output": output_format
-	    },
-            "STEP_SIZE": 0.2,
-            "SYSCTLS": "n/a",
-            "T0": "n/a",
-            "TEST_PARAMETERS": "n/a",
-            "TIME": "n/a",
-            "TITLE": "",
-            "TOTAL_LENGTH": "n/a"
-	},
-	"raw_values": {
-	    "Ping (ms) ICMP": [],
-	    "tcp_stream":[]
-	},
-	"results": {
-	    "Ping (ms) ICMP": [],
-	    "tcp_stream":[]
-	},
-        "version": 4,
-	"x_values": []
+	       	cur_case: new_format
+	    }
+	}
     }
 	
     json_str = json.dumps(template2, indent=4)

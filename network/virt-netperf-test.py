@@ -21,6 +21,7 @@ v1.0    2018-11-26  boyang  Update click to display usage
 v1.1    2018-11-29  boyang  Remove process of tools required check and installation
 v1.2    2018-12-03  boyang  Split STREAM mode and RR mode tests as different params
 v1.3    2018-11-29  boyang  Enhance log file name format
+v2.0    2020-07-06  boyang  Dynamic driver names
 """
 
 
@@ -213,12 +214,12 @@ class NetperfTestRunner:
         total_iter = {}
         # Different platforms, differnt NIC driver.
         driver = subprocess.Popen("ethtool -i `ls /sys/class/net/ | grep ^e[tn][hosp] | awk 'END{print}'` | awk NR==1 | awk '{print $2}'", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # driver is a str
+        # driver is a str.
         driver = driver.stdout.read().decode("utf-8").strip("\n")
-        # driver is a list
+        # driver is a list.
         driver = driver.split("@@")
 
-        # Subcases iter for stream modes
+        # Subcases iter for stream /maerts modes.
         for m in self.data_modes:
             if m.find("STREAM") != -1:
                 stream.append(m)
@@ -250,6 +251,7 @@ class NetperfTestRunner:
             # netperf -t TCP_MAERTS -f m -H $remote_server_ip -l 10 -- -m $a
             # netperf -t UDP_STREAM -f m -H $remote_server_ip -l 10 -- -m $a
             (rd, driver, data_mode, m_size, instance) = it
+            print(it)
 
             # Check output log DIR
             output_path = os.path.expanduser(self.log_path)
@@ -274,7 +276,7 @@ class NetperfTestRunner:
             command += ' -l %d' % self.exe_time
             command += ' --'
             command += ' -m %s' % m_size
-            command += ' -k THROUGHPUT,TRANSACTION_RATE,PROTOCOL,DIRECTION,SOCKET_TYPE,ELAPSED_TIME,THROUGHPUT_UNITS,LSS_SIZE,RSS_SIZE,LOCAL_SEND_SIZE,LOCAL_RECV_SIZE,REMOTE_SEND_SIZE,REMOTE_RECV_SIZE,REQUEST_SIZE,RESPONSE_SIZE,LOCAL_CPU_UTIL,LOCAL_CPU_PERCENT_USER,CONFIDENCE_INTERVAL,THROUGHPUT_CONFID,CONFIDENCE_ITERATION,LOCAL_TRANSPORT_RETRANS,REMOTE_TRANSPORT_RETRANS,TRANSPORT_MSS,REMOTE_SEND_CALLS,COMMAND_LINE'
+            command += ' -k THROUGHPUT,TRANSACTION_RATE,PROTOCOL,DIRECTION,SOCKET_TYPE,ELAPSED_TIME,THROUGHPUT_UNITS,LSS_SIZE,RSS_SIZE,LOCAL_SEND_SIZE,LOCAL_RECV_SIZE,REMOTE_SEND_SIZE,REMOTE_RECV_SIZE,REQUEST_SIZE,RESPONSE_SIZE,LOCAL_CPU_UTIL,LOCAL_CPU_PERCENT_USER,CONFIDENCE_INTERVAL,THROUGHPUT_CONFID,CONFIDENCE_ITERATION,LOCAL_TRANSPORT_RETRANS,REMOTE_TRANSPORT_RETRANS,TRANSPORT_MSS,REMOTE_SEND_CALLS,MEAN_LATENCY,COMMAND_LINE'
             command += ' > ' + output
 
             # Execute netperf test
@@ -290,6 +292,7 @@ class NetperfTestRunner:
             # netperf -t TCP_CRR -H $remote_server_ip -- -r 256,256 -D
             # netperf -t UDP_RR -H $remote_server_ip -- -r 256,256 -D
             (rd, driver, data_mode, rr_size, instance) = it
+            print(it)
 
             # Check output log DIR
             output_path = os.path.expanduser(self.log_path)
@@ -297,8 +300,9 @@ class NetperfTestRunner:
                 os.makedirs(output_path)
 
             # Confirm Output log name
-            output_file = '%s-%s-%s-inst%s_rd%s-%s.nplog' % (
-		data_mode, driver, m_size, instance, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()) 
+            tmp_rr_size = rr_size.replace(", ", "_")
+            output_file = '%s-%s-%s-inst%s-rd%s-%s.nplog' % (
+		data_mode, driver, tmp_rr_size, instance, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()) 
             )
 
             # Confirm full output log file path
@@ -311,7 +315,7 @@ class NetperfTestRunner:
             command += ' --'
             command += ' -r %s' % rr_size
             command += ' -D'
-            command += ' -k THROUGHPUT,TRANSACTION_RATE,PROTOCOL,DIRECTION,SOCKET_TYPE,ELAPSED_TIME,THROUGHPUT_UNITS,LSS_SIZE,RSS_SIZE,LOCAL_SEND_SIZE,LOCAL_RECV_SIZE,REMOTE_SEND_SIZE,REMOTE_RECV_SIZE,REQUEST_SIZE,RESPONSE_SIZE,LOCAL_CPU_UTIL,LOCAL_CPU_PERCENT_USER,CONFIDENCE_INTERVAL,THROUGHPUT_CONFID,CONFIDENCE_ITERATION,LOCAL_TRANSPORT_RETRANS,REMOTE_TRANSPORT_RETRANS,TRANSPORT_MSS,REMOTE_SEND_CALLS,COMMAND_LINE'
+            command += ' -k THROUGHPUT,TRANSACTION_RATE,PROTOCOL,DIRECTION,SOCKET_TYPE,ELAPSED_TIME,THROUGHPUT_UNITS,LSS_SIZE,RSS_SIZE,LOCAL_SEND_SIZE,LOCAL_RECV_SIZE,REMOTE_SEND_SIZE,REMOTE_RECV_SIZE,REQUEST_SIZE,RESPONSE_SIZE,LOCAL_CPU_UTIL,LOCAL_CPU_PERCENT_USER,CONFIDENCE_INTERVAL,THROUGHPUT_CONFID,CONFIDENCE_ITERATION,LOCAL_TRANSPORT_RETRANS,REMOTE_TRANSPORT_RETRANS,TRANSPORT_MSS,REMOTE_SEND_CALLS,MEAN_LATENCY,COMMAND_LINE'
             command += ' > ' + output
 
             # Execute netperf test
