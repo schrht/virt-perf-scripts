@@ -21,6 +21,22 @@
             ]
         },
         {
+            "name": "Python: network-np/GenerateNetworkBenchmarkReport.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/network-np/GenerateNetworkBenchmarkReport.py",
+            "console": "integratedTerminal",
+            "pythonPath": "${command:python.interpreterPath}",
+            "args": [
+                "--base_csv",
+                "network-np/results/netperf_report-base.csv",
+                "--test_csv",
+                "network-np/results/netperf_report-test.csv",
+                "--report_csv",
+                "network-np/results/netperf-benchmark.csv"
+            ]
+        },
+        {
             "name": "Python: GenerateNetworkTestReport.py",
             "type": "python",
             "request": "launch",

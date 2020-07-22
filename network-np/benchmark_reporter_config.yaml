@@ -5,14 +5,18 @@ FlentBenchmarkReporter:
     regression_threshold: 5
     confidence_threshold: 0.95
   keys:
-    - Backend
     - Driver
-    - Format
-    - Type
-    - source_label: MSize(Kbits)
-      target_label: MSize
-      target_unit: Kbits
+    - Test
+    - MSize
+    - RRSize
   kpis:
-    - source_label: BW(Mbits/s)
-      target_label: BW
-      target_unit: Mbits/s
+    - source_label: Throughput(10^6bits/s)
+      target_label: Throughput
+      target_unit: 10^6bits/s
+    - source_label: TransRate(per sec)
+      target_label: TransRate
+      target_unit: "per sec"
+    - source_label: Latency(ms)
+      target_label: Latency
+      target_unit: "ms"
+      higher_is_better: "no"
