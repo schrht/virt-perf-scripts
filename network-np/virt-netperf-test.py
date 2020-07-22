@@ -1,34 +1,23 @@
 #!/usr/bin/env python
 
 
-"""Run Netperf Test in RHEL in virtual platforms
-# Interface to GenerateTestReport.py
-# This script should do:
-# 1. The netperf outputs should be at least in netperf original format
-# 2. Save above netperf outputs into *.nplog
-# 3. Put all *.nplog files into the specific path
-# 4. Additional information format should be JSON
-# 5. Save above additional information into nplog.info
-# 6. The *.nplog and *.nplog.info files should be corresponding (have the same file name)
-
+"""Run Netperf Test in RHEL in virtual platforms.
+Interface to GenerateTestReport.py. HERE, we change it, GenerateTestReport gets info from JSON files.
+This script should do:
+   1. The netperf outputs should be stored in a specific path(/tmp/) in *.nplog files.
+   2. Save additional information(cpu%, interrputs etc.) into nplog.info. WIP
+   3. The *.nplog and *.nplog.info files should be corresponding(Have the same file name.).
+   4. Convert above logs into JSON files with result-convert.py.
 
 History:
-v0.1    2018-10-11  boyang  Re-build netperf script which run in netperf client
-v0.2    2018-11-13  boyang  Support tools required check and installation
-v0.3    2018-11-14  boyang  Optimize process of tools required check and installation
-v0.4    2018-11-17  boyang  Update from init format to yaml
-v1.0    2018-11-26  boyang  Update click to display usage
-v1.1    2018-11-29  boyang  Remove process of tools required check and installation
-v1.2    2018-12-03  boyang  Split STREAM mode and RR mode tests as different params
-v1.3    2019-01-29  boyang  Enhance log file name format
-v1.4    2019-03-13  boyang  Move load_config from PRE script (deleted) to this script
-v1.5    2019-03-24  boyang  As framework, yaml file location ONLY is /root/network in VM
-v1.6    2019-04-11  boyang  Enhance VMs communication without confirmation
-v2.0    2019-05-09  boyang  Remove *.nolog.info here in current version 2.0, ONLY left standerd index
+    v1.0.0  2018-10-11  boyang  Re-build netperf script which run in netperf client.
+    v1.1.0  2018-12-03  boyang  Split STREAM mode and RR mode tests as different params.
+    v2.0.0  2020-07-06  boyang  Get drivers names dynamically.
 """
 
 
 import os
+import sys
 import time
 import yaml
 import click
@@ -37,31 +26,30 @@ import subprocess
 
 
 def load_config(config):
+    """Load test configuration file.
+    Args:
+        config: configuration file format by yaml.
+    Return: 
+        dict
     """
-    Load test configuration file
-    :param config: configuration file format by yaml
-    :return: dict
-    """
-
     config_dir = {}
 
     if not config:
-        print("ERROR: Param [config] Missed")
+        print("ERROR: Param [config] Missed.")
         return False
     else:
         try:
-            # Load netperf test configuration
+            # Load netperf test configuration.
             with open(config, "r") as f:
                 config_dir = yaml.load(f)
         except Exception as err:
-            print('ERROR: Fail to load YAML file. %s' % err)
+            print('ERROR: Fail to load YAML file. As error: %s.' % err)
 
     return config_dir["NetperfRunner"]
 
 
 class NetperfTestRunner:
-    """
-    This class used to run the netperf test cases. As basic functions:
+    """Run the netperf test cases. As basic functions.
     1. It loads all the needed parameters from dict named 'params';
     2. It splits the test suites into sub-cases and run them one by one;
     3. It generates the netperf test report as log files ending with '.nplog';
@@ -84,9 +72,9 @@ class NetperfTestRunner:
                  exe_time: int
                      Execution time of a netperf case
                      Example: 60
-                 driver: list
-                     NIC type. HERE. Only support VMXNET3
-                     Example: "vmxnet3", "e1000e", "e1000"
+                # driver: list
+                #     NIC type. HERE. Only support VMXNET3
+                #     Example: "vmxnet3", "e1000e", "e1000"
                  instances: list
                      How many instances run a netperf case
                      Example: 1, 2, 4, 8
@@ -141,15 +129,6 @@ class NetperfTestRunner:
             exit(1)
         else:
             self.exe_time = params['exe_time']
-
-        if 'driver' not in params:
-            print('[ERROR] Missing required params: params[driver]')
-            exit(1)
-        elif not isinstance(params['driver'], (list, tuple)):
-            print('[ERROR] params[driver] must be a list or tuple.')
-            exit(1)
-        else:
-            self.driver = params['driver']
 
         if 'instance' not in params:
             print('[ERROR] Missing required params: params[instance]')
@@ -214,72 +193,46 @@ class NetperfTestRunner:
         stream = []
         rr = []
         total_iter = {}
+        # Different platforms, differnt NIC driver.
+        driver = subprocess.Popen("ethtool -i `ls /sys/class/net/ | grep ^e[tn][hosp] | awk 'END{print}'` | awk NR==1 | awk '{print $2}'", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # driver is a str.
+        driver = driver.stdout.read().decode("utf-8").strip("\n")
+        # driver is a list.
+        driver = driver.split("@@")
 
-        # Subcases iter for stream modes
+        # Subcases iter for stream /maerts modes.
         for m in self.data_modes:
             if m.find("STREAM") != -1:
                 stream.append(m)
-        stream_it = itertools.product(list(range(1, self.rounds + 1)), self.driver, stream, self.m_size, self.instance)
+        stream_it = itertools.product(list(range(1, self.rounds + 1)), driver, stream, self.m_size, self.instance)
 
         # Subcases iter for rr modes
         for m in self.data_modes:
             if m.find("RR") != -1:
                 rr.append(m)
-        rr_it = itertools.product(list(range(1, self.rounds + 1)), self.driver, rr, self.rr_size, self.instance)
+        rr_it = itertools.product(list(range(1, self.rounds + 1)), driver, rr, self.rr_size, self.instance)
 
         total_iter.update({"STREAM": stream_it})
         total_iter.update({"RR": rr_it})
 
         return total_iter
 
-    def run_rmt_netserver(self, rmt_ip):
-        """
-        Run netserver in remote VM
-        :param rmt_ip: IP of remote VM
-        :return: True or False
-        """
-
-        if not rmt_ip:
-            print("ERROR: Parameter(s) Missed")
-            return False
-        else:
-            configs = load_config("netperf_config.yaml")
-            if len(configs) == 0:
-                print("ERROR: Load netperf config file failed")
-                return False
-
-        # Kill netserver before start netserver service in remote VM
-        print("INFO: Kill netserver in the remote VM")
-        kill = subprocess.Popen(["ssh", "-i", configs["ssh_key"], "-o", StrictHostKeyChecking=no, "root@" + rmt_ip, "pkill -9 netserver"],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        err_kill = kill.stderr.read().strip()
-
-        # Start netserver service in remote VM
-        print("INFO: Run netserver in the remote VM")
-        run = subprocess.Popen(["ssh", "-i", configs["ssh_key"], "root@" + rmt_ip, "netserver"],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        err_run = run.stderr.read().strip()
-
-        # Check result of run
-        if len(err_kill) != 0 or len(err_run) != 0:
-            print("ERROR: Execute netserver failed")
-            return False
-        else:
-            print("INFO: Execute netserver successfully")
-            return True
 
     def run_local_netperf(self, rmt_ip):
+        """Assume Remote Host netserver is running. Run netperf in local VM
+        Args:
+            self.rmt_ip: Host IP where run netserver.
+        Return: 
+            True or False.
         """
-        Run netperf in local VM
-        :return: True or False
-        """
-
         diff_iters = self._split_netperf_tests()
 
         for it in diff_iters["STREAM"]:
             # netperf -t TCP_STREAM -f m -H $remote_server_ip -l 10 -- -m $a
+            # netperf -t TCP_MAERTS -f m -H $remote_server_ip -l 10 -- -m $a
             # netperf -t UDP_STREAM -f m -H $remote_server_ip -l 10 -- -m $a
             (rd, driver, data_mode, m_size, instance) = it
+            print(it)
 
             # Check output log DIR
             output_path = os.path.expanduser(self.log_path)
@@ -287,22 +240,24 @@ class NetperfTestRunner:
                 os.makedirs(output_path)
 
             # Confirm Output log name
-            output_file = '%s_rd%s_%s_%s_%s_inst%s.nplog' % (
-                time.strftime('%Y%m%d%H%M%S', time.localtime()),
-                rd, driver, data_mode, m_size, instance
+	    # Log file name: TCP_RR-vmxnet3-32_1024-inst1-rd2-20200507113014.nplog
+            output_file = '%s-%s-%s-inst%s-rd%s-%s.nplog' % (
+		data_mode, driver, m_size, instance, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()) 
             )
 
             # Confirm full output log file path
             output = output_path + os.sep + output_file
 
             # Build the command
-            command = 'netperf'
+            command = 'netperf -P 0 -v 0 -D -0.20'
+            command += ' -4'
             command += ' -t %s' % data_mode
             command += ' -f m'
             command += ' -H %s' % rmt_ip
             command += ' -l %d' % self.exe_time
             command += ' --'
             command += ' -m %s' % m_size
+            command += ' -k THROUGHPUT,TRANSACTION_RATE,PROTOCOL,DIRECTION,SOCKET_TYPE,ELAPSED_TIME,THROUGHPUT_UNITS,LSS_SIZE,RSS_SIZE,LOCAL_SEND_SIZE,LOCAL_RECV_SIZE,REMOTE_SEND_SIZE,REMOTE_RECV_SIZE,REQUEST_SIZE,RESPONSE_SIZE,LOCAL_CPU_UTIL,LOCAL_CPU_PERCENT_USER,CONFIDENCE_INTERVAL,THROUGHPUT_CONFID,CONFIDENCE_ITERATION,LOCAL_TRANSPORT_RETRANS,REMOTE_TRANSPORT_RETRANS,TRANSPORT_MSS,REMOTE_SEND_CALLS,MEAN_LATENCY,COMMAND_LINE'
             command += ' > ' + output
 
             # Execute netperf test
@@ -315,9 +270,10 @@ class NetperfTestRunner:
 
         for it in diff_iters["RR"]:
             # netperf -t TCP_RR -H $remote_server_ip -- -r 256,256 -D
-            # netperf -t UDP_RR -H $remote_server_ip -- -r 256,256 -D
             # netperf -t TCP_CRR -H $remote_server_ip -- -r 256,256 -D
+            # netperf -t UDP_RR -H $remote_server_ip -- -r 256,256 -D
             (rd, driver, data_mode, rr_size, instance) = it
+            print(it)
 
             # Check output log DIR
             output_path = os.path.expanduser(self.log_path)
@@ -325,9 +281,9 @@ class NetperfTestRunner:
                 os.makedirs(output_path)
 
             # Confirm Output log name
-            output_file = '%s_rd%s_%s_%s_%s_inst%s.nplog' % (
-                time.strftime('%Y%m%d%H%M%S', time.localtime()),
-                rd, driver, data_mode, "_".join(rr_size.split(", ")), instance
+            tmp_rr_size = rr_size.replace(", ", "_")
+            output_file = '%s-%s-%s-inst%s-rd%s-%s.nplog' % (
+		data_mode, driver, tmp_rr_size, instance, rd, time.strftime('%Y%m%d%H%M%S', time.localtime()) 
             )
 
             # Confirm full output log file path
@@ -340,6 +296,7 @@ class NetperfTestRunner:
             command += ' --'
             command += ' -r %s' % rr_size
             command += ' -D'
+            command += ' -k THROUGHPUT,TRANSACTION_RATE,PROTOCOL,DIRECTION,SOCKET_TYPE,ELAPSED_TIME,THROUGHPUT_UNITS,LSS_SIZE,RSS_SIZE,LOCAL_SEND_SIZE,LOCAL_RECV_SIZE,REMOTE_SEND_SIZE,REMOTE_RECV_SIZE,REQUEST_SIZE,RESPONSE_SIZE,LOCAL_CPU_UTIL,LOCAL_CPU_PERCENT_USER,CONFIDENCE_INTERVAL,THROUGHPUT_CONFID,CONFIDENCE_ITERATION,LOCAL_TRANSPORT_RETRANS,REMOTE_TRANSPORT_RETRANS,TRANSPORT_MSS,REMOTE_SEND_CALLS,MEAN_LATENCY,COMMAND_LINE'
             command += ' > ' + output
 
             # Execute netperf test
@@ -351,8 +308,21 @@ class NetperfTestRunner:
             os.system(command)
 
 
-def get_cli_params(log_path, install_path, ssh_key, exe_time, driver, instance, rounds, data_modes, rr_size, m_size):
-    """Get parameters from the CLI."""
+def get_cli_params(log_path, install_path, ssh_key, exe_time, instance, rounds, data_modes, rr_size, m_size):
+    """Get parameters from the CLI.
+    Args:
+        log_path: Store all logs.
+        install_path: Latency param
+        ssh_key: Latency param
+        exe_time: Run time, default 60
+        instance: Counts of netperf process
+        rounds: Counts of run of a case
+        data_modes: Test cases
+        rr_size: Size for RR or CRR
+        m_size: Size for STREAM
+    Returns:
+        dict
+    """
     cli_params = {}
 
     if log_path:
@@ -363,8 +333,6 @@ def get_cli_params(log_path, install_path, ssh_key, exe_time, driver, instance, 
         cli_params['ssh_key'] = ssh_key
     if exe_time:
         cli_params['exe_time'] = int(exe_time)
-    if driver:
-        cli_params['driver'] = driver
     if instance:
         cli_params['instance'] = int(instance)
     if rounds:
@@ -380,11 +348,19 @@ def get_cli_params(log_path, install_path, ssh_key, exe_time, driver, instance, 
 
 
 def get_yaml_params():
-    """Get parameters from the yaml file."""
+    """Get parameters from the yaml file.
+    Returns:
+        dict
+    """
     yaml_params = {}
 
+    script_path = os.path.split(os.path.realpath( sys.argv[0]))[0]
+    print("DEBUG: script_path: %s" % script_path)
+    target_config = os.path.join(script_path, "netperf_config.yaml")
+    print("DEBUG: target_config: %s" % target_config)
+
     try:
-        with open('/root/network/netperf_config.yaml') as f:
+        with open(target_config) as f:
             yaml_dict = yaml.load(f)
             yaml_params = yaml_dict['NetperfRunner']
 
@@ -396,13 +372,16 @@ def get_yaml_params():
 
 
 def run_netperf_test(rmt_ip, params={}):
-    """Initialize and run the netperf test."""
+    """Initialize and run the netperf test.
+    Args:
+        rmt_ip: Host IP where netserver
+        params: Includes instance, drivers, rounds, data_modes
+    """
     print('=' * 50)
     print('Start Time: %s' % time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
     print('=' * 50)
 
     runner = NetperfTestRunner(params)
-    runner.run_rmt_netserver(rmt_ip)
     runner.run_local_netperf(rmt_ip)
 
     print('=' * 50)
@@ -416,37 +395,49 @@ def run_netperf_test(rmt_ip, params={}):
 @click.option('--install_path', help='The script installs tools required.')
 @click.option('--ssh_key', help='The SSH KEY is used to access any VM.')
 @click.option('--exe_time', type=click.IntRange(1, 60), help='How much time current netperf case run.')
-@click.option('--driver', help='NIC types include vmxnet3 / e1000 / e1000e. Current ONLY supports vmxnet3.')
+#@click.option('--driver', help='NIC types include vmxnet3 / e1000 / e1000e. Current ONLY supports vmxnet3.')
 @click.option('--instance', type=click.IntRange(1, 10), help='[NETPERF]How many instances be started.')
 @click.option('--rounds', type=click.IntRange(1, 10), help='How many rounds to run')
 @click.option('--data_modes', help='[NETPERF] Test modes includes STREAM and RR and CRR')
 @click.option('--rr_size', help='[NETPERF] RR size when test RR mode')
 @click.option('--m_size', help='[NETPERF] M size when test STREAM mode')
 def cli(rmt_ip, log_path, install_path, ssh_key, exe_time,
-        driver, instance, rounds, data_modes, rr_size, m_size):
+        instance, rounds, data_modes, rr_size, m_size):
     """Command line interface.
+
     Take arguments from CLI, load default parameters from yaml file.
     Then initialize the netperf test.
+
+    Args:
+        log_path: Store all logs.
+        install_path: Latency param
+        ssh_key: Latency param
+        exe_time: Run time, default 60
+        instance: Counts of netperf process
+        rounds: Counts of run of a case
+        data_modes: Test cases
+        rr_size: Size for RR or CRR
+        m_size: Size for STREAM
     """
     # Read user specified parameters from CLI
     cli_params = get_cli_params(log_path, install_path, ssh_key,
-                                exe_time, driver, instance, rounds, data_modes, rr_size, m_size)
-    print("DEBUG: Params from CLI")
+                                exe_time,instance, rounds, data_modes, rr_size, m_size)
+    print("DEBUG: Params from CLI:")
     print(cli_params)
 
-    # Read user configuration from yaml file
+    # Read user configuration from yaml file.
     yaml_params = get_yaml_params()
-    print("DEBUG: Params from YAML")
+    print("DEBUG: Params from YAML:")
     print(yaml_params)
 
-    # Combine user input and config
+    # Combine user input and config.
     params = {}
     params.update(yaml_params)
     params.update(cli_params)
-    print("DEBUG: Last Params")
+    print("DEBUG: Last Params:")
     print(params)
 
-    # Run NETPERF test
+    # Run NETPERF test.
     run_netperf_test(rmt_ip, params)
 
     exit(0)

@@ -1,6 +1,18 @@
 #######
-  0. setup DIR. Guide how to prepare VMs and setup ENV automatically
+	Usage:
+	0. There is NO any relationship between platforms and main scripts.
+	1. env DIR. Guide how to meet test requirements.
+  	2. Run "python virt-netperf-test.py $remote_ip" in a client as netperf. And generate logs in /tmp/.
+	3. Run "python result-convert.py" in above client and will convert logs into a json file.
 
-  1. Run controller.sh in VM1(controller) will setup ENV in VM2(clinet) and VM3(server)
 
-  2. Run "virt_netperf_test.py $VM3_IP" in VM2 to start netperf test
+#######
+	Requirements:
+	0. ENV Denpendencies:
+		- yum install automake m4
+		- wget http://ftp.gnu.org/gnu/texinfo/texinfo-6.7.tar.gz (Get latest version from http://ftp.gnu.org/gnu/texinfo/).
+		- git clone https://github.com/HewlettPackard/netperf.git and compile source code  with --enable-burst --enable-demo=yes.
+	1. Runtime Denpendencies:
+		- click
+		- pyyaml
+
