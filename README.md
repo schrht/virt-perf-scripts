@@ -10,6 +10,8 @@ This tool is designed for running an FIO benchmark in guest.
 
 1. Install [`fio`](https://github.com/axboe/fio/releases) on the guest.
 
+> `sudo yum install -y libaio fio gnuplot`
+
 2. Install the following Python modules:
 - `click`
 - `pandas`
@@ -18,8 +20,7 @@ This tool is designed for running an FIO benchmark in guest.
 - `yaml`
 
 > Notes:  
-> `yaml` can be installed with `python-yaml` or `python3-yaml` package via `yum`;
-> Other modules can be install by `pip install <module-name>`.
+> You can use `./block/setup.sh` for step 1 and 2 on RHEL systems.
 
 3. Deliver the following scripts to the guest:
 - `./block/RunFioTest.py`
@@ -32,12 +33,12 @@ This tool is designed for running an FIO benchmark in guest.
 The manual page of `RunFioTest.py`:
 
 ```
-$ ./RunFioTest.py --help
+$ python3 ./RunFioTest.py --help
 Usage: RunFioTest.py [OPTIONS]
 
   Command line interface.
 
-  Take arguments from CLI, load default parameters from yaml fisle. Then
+  Take arguments from CLI, load default parameters from yaml file. Then
   initialize the fio test.
 
 Options:
@@ -46,11 +47,14 @@ Options:
   --fs TEXT                The filesystem of the disk to be tested, "RAW" for
                            no fs.
   --rounds INTEGER RANGE   How many rounds the fio test will be repeated.
-  --filename TEXT          [FIO] The disk or specified file(s) to be tested by
-                           fio.
+  --filename TEXT          [FIO] The disk(s) or specified file(s) to be tested
+                           by fio. You can specify a number of targets by
+                           separating the names with a ':' colon.
   --runtime TEXT           [FIO] Terminate a job after the specified period of
                            time.
-  --direct [0|1]           [FIO] Direct access to the disk.
+  --ioengine TEXT          [FIO] Defines how the job issues I/O to the file.
+                           Such as: 'libaio', 'io_uring', etc.
+  --direct INTEGER RANGE   [FIO] Direct access to the disk.
   --numjobs INTEGER RANGE  [FIO] Create the specified number of clones of the
                            job.
   --rw_list TEXT           [FIO] Type of I/O pattern.
@@ -58,6 +62,10 @@ Options:
   --iodepth_list TEXT      [FIO] # of I/O units to keep in flight against the
                            file.
   --log_path TEXT          Where the *.fiolog files will be saved to.
+  --plots / --no-plots     Generate bw/iops/lat logs and plots in their
+                           lifetime.
+  --dryrun                 Print the commands that would be executed, but do
+                           not execute them.
   --help                   Show this message and exit.
 ```
 
@@ -66,7 +74,7 @@ If you run `./RunFioTest.py` without any parameter, it will load default value f
 Typically, you should run the following command to provide enough information:
 
 ```
-$ ./RunFioTest.py --backend NVME --driver SCSI --fs RAW --filename /dev/sdb --log_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809
+$ python3 ./RunFioTest.py --backend NVME --driver SCSI --fs RAW --filename /dev/sdb --log_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809
 ```
 
 This command will create `$HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809` and generate *.fiolog file for each subcase to this path.
@@ -76,7 +84,7 @@ This command will create `$HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809` and gen
 The manual page of `GenerateTestReport.py`:
 
 ```
-$ ./GenerateTestReport.py --help
+$ python3 ./GenerateTestReport.py --help
 Usage: GenerateTestReport.py [OPTIONS]
 
   Command Line Interface.
@@ -90,7 +98,7 @@ Options:
 Typically, you should run the following command:
 
 ```
-$ ./GenerateTestReport.py --result_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809 --report_csv ESXi_FIO_RHEL7u6_20180809.csv
+$ python3 ./GenerateTestReport.py --result_path $HOME/workspace/log/ESXi_FIO_RHEL7u6_20180809 --report_csv ESXi_FIO_RHEL7u6_20180809.csv
 ```
 
 This command will create a CSV test report with all the performance KPIs in.
@@ -100,7 +108,7 @@ This command will create a CSV test report with all the performance KPIs in.
 The manual page of `GenerateBenchmarkReport.py`:
 
 ```
-$ ./GenerateBenchmarkReport.py --help
+$ python3 ./GenerateBenchmarkReport.py --help
 Usage: GenerateBenchmarkReport.py [OPTIONS]
 
   Command Line Interface.
@@ -115,11 +123,38 @@ Options:
 Typically, you should run the following command:
 
 ```
-$ ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test_csv ./ESXi_FIO_RHEL7u6_20180809.csv --report_csv ESXi_FIO_Benchmark_RHEL7u6_against_RHEL7u5_20180809.csv
+$ python3 ./GenerateBenchmarkReport.py --base_csv ./ESXi_FIO_RHEL7u5_20180401.csv --test_csv ./ESXi_FIO_RHEL7u6_20180809.csv --report_csv ESXi_FIO_Benchmark_RHEL7u6_against_RHEL7u5_20180809.csv
 ```
 
 This command will create a CSV benchmark report which comparing RHEL7.6 performance KPIs against RHEL7.5.
 
+### About the index and conclusion
+
+The conclusion can be the following values in specific situations:
+```
+Conclusion              Situation
+Data Invalid            The input data is invalid;
+Variance Too Large      The %SD beyonds the MAX_PCT_DEV;
+No Difference           The %DIFF is zero;
+No Significance         The Significance less than CONFIDENCE_THRESHOLD;
+Major Improvement       The Significance beyonds CONFIDENCE_THRESHOLD and %DIFF beyonds REGRESSION_THRESHOLD;
+Major Regression        The Significance beyonds CONFIDENCE_THRESHOLD and %DIFF beyonds REGRESSION_THRESHOLD;
+Minor Improvement       The Significance beyonds CONFIDENCE_THRESHOLD but %DIFF belows REGRESSION_THRESHOLD;
+Minor Regression        The Significance beyonds CONFIDENCE_THRESHOLD but %DIFF belows REGRESSION_THRESHOLD;
+
+MAX_PCT_DEV = 10
+REGRESSION_THRESHOLD = 5
+CONFIDENCE_THRESHOLD = 0.95
+```
+
+Calculation:
+```
+AVG = SUM(the performance number of sample 1~5) / 5
+%SD = (The Standard Deviation of the 5 samples) / AVG * 100%
+%DIFF = (TEST-AVG - BASE-AVG) / BASE-AVG * 100%
+Significance = (1 - TTEST(BASE Sample 1~5, TEST Sample 1~5))
+```
+
 ## Paste the results into Google Speardsheets
 
-You can copy & paste the contents from CSV file into the [Template of Google Speardsheets](https://docs.google.com/spreadsheets/d/1C5DsB5oWXI0Wl5rGiCLQI09w2nbq96uovPYoF6rvM6Y/edit?usp=sharing). So that you could check the benchmark results much more conveniently.
+You can copy & paste the contents from CSV file into the [Template of Google Speardsheets](https://drive.google.com/open?id=1cdz1m8dPNoaH-dkOAxSbhvg-fFIdY7hh). So that you could check the benchmark results much more conveniently.

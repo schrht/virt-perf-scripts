@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Generate FIO Benchmark Report.
 
 History:
@@ -6,6 +6,8 @@ v1.0    2018-03-16  charles.shih  Finish all the functions.
 v1.0.1  2018-08-09  charles.shih  Enhance the output messages.
 v1.1    2018-08-09  charles.shih  Update the Command Line Interface.
 v1.2    2018-08-20  charles.shih  Support Python 3.
+v1.2.1  2019-07-08  charles.shih  Use minor and major to indicate the results.
+v1.3    2019-07-29  charles.shih  Calculate 90% complete latency number.
 """
 
 import click
@@ -116,10 +118,11 @@ class FioBenchmarkReporter():
         self.df_report = self.df_report.reset_index().drop(columns=['index'])
 
         # Add the new columns to report DataFrame
-        # [Note] Units: BW(MiB/s) / IOPS / LAT(ms) / Util(%)
+        # [Note] Units: BW(MiB/s) / IOPS / LAT(ms) / CLAT90(ms) / Util(%)
         self._add_columns_into_report_dataframe('BW')
         self._add_columns_into_report_dataframe('IOPS')
         self._add_columns_into_report_dataframe('LAT')
+        self._add_columns_into_report_dataframe('CLAT90')
         self._add_columns_into_report_dataframe('Util')
 
         return None
@@ -167,10 +170,10 @@ class FioBenchmarkReporter():
             'Variance Too Large': the %SD beyonds MAX_PCT_DEV;
             'No Difference': the %DIFF is zero;
             'No Significance': the Significance less than CONFIDENCE_THRESHOLD;
-            'Significantly Improvement' and 'Significantly Regression':
+            'Major Improvement' and 'Major Regression':
                 the Significance beyonds CONFIDENCE_THRESHOLD and %DIFF
                 beyonds REGRESSION_THRESHOLD;
-            'Slightly Improvement' and 'Slightly Regression':
+            'Minor Improvement' and 'Minor Regression':
                 the Significance beyonds CONFIDENCE_THRESHOLD but %DIFF
                 is below REGRESSION_THRESHOLD;
 
@@ -194,14 +197,14 @@ class FioBenchmarkReporter():
         if (higher_is_better and pct_diff > 0) or (not higher_is_better
                                                    and pct_diff < 0):
             if abs(pct_diff) >= REGRESSION_THRESHOLD:
-                return 'Significantly Improvement'
+                return 'Major Improvement'
             else:
-                return 'Slightly Improvement'
+                return 'Minor Improvement'
         else:
             if abs(pct_diff) >= REGRESSION_THRESHOLD:
-                return 'Significantly Regression'
+                return 'Major Regression'
             else:
-                return 'Slightly Regression'
+                return 'Minor Regression'
 
     def _calculate_and_fill_report_series(self, series, df_base, df_test,
                                           label, source_label,
@@ -264,6 +267,8 @@ class FioBenchmarkReporter():
                 series, my_sub_base, my_sub_test, 'IOPS', 'IOPS', True)
             self._calculate_and_fill_report_series(
                 series, my_sub_base, my_sub_test, 'LAT', 'LAT(ms)', False)
+            self._calculate_and_fill_report_series(
+                series, my_sub_base, my_sub_test, 'CLAT90', 'CLAT90(ms)', False)
             self._calculate_and_fill_report_series(
                 series, my_sub_base, my_sub_test, 'Util', 'Util(%)', True)
 

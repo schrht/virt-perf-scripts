@@ -4,17 +4,19 @@ FioTestRunner:
   driver: NaN
   fs: NaN
   rounds: 3
-  filename: /tmp/testfile
+  filename: /dev/xvdf
   runtime: 1m
   ioengine: libaio
   direct: 1
-  numjobs: 1
+  numjobs: 16
   rw_list:
-    - read
-    - randread
+    - rw
+    - randrw
   bs_list:
     - 4k
+    - 1024k
   iodepth_list:
-    - 8
+    - 1
+    - 64
   plots: true
   dryrun: false

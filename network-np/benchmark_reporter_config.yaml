@@ -1,0 +1,22 @@
+FlentBenchmarkReporter:
+  kpi_defaults:
+    higher_is_better: yes
+    max_percent_dev: 10
+    regression_threshold: 5
+    confidence_threshold: 0.95
+  keys:
+    - Driver
+    - Test
+    - MSize
+    - RRSize
+  kpis:
+    - source_label: Throughput(10^6bits/s)
+      target_label: Throughput
+      target_unit: 10^6bits/s
+    - source_label: TransRate(per sec)
+      target_label: TransRate
+      target_unit: "per sec"
+    - source_label: Latency(ms)
+      target_label: Latency
+      target_unit: "ms"
+      higher_is_better: "no"
