@@ -9,6 +9,7 @@ v0.2    2020-07-02  charles.shih  Basic function completed.
 v0.3    2020-07-20  charles.shih  Adapt the script for virt_netperf_test.
 v0.4    2020-07-21  charles.shih  Add KPI TransRate.
 v0.5    2020-07-21  charles.shih  Modify KPI Throughput, MSize, RRSize.
+v0.6    2020-07-21  charles.shih  Adjust MSize, RRSize, add KPI Latency.
 """
 
 import json
@@ -198,24 +199,30 @@ class NetperfTestReporter():
 
                 # Message / RR size
                 perf_kpi['msize'] = metadata['M_SIZE']
-                perf_kpi['rrsize'] = 'NaN'
+                perf_kpi['rrsize'] = '0'
 
                 # Bandwidth in "Mbits/s".
                 unit = series_meta[name]['THROUGHPUT_UNITS']
                 if unit != '10^6bits/s':
                     raise Exception('Bandwidth unit is not "10^6bits/s".')
                 perf_kpi['throughput'] = series_meta[name]['THROUGHPUT']
-                perf_kpi['transrate'] = series_meta[name]['TRANSACTION_RATE']
+                perf_kpi['transrate'] = 'NaN'
+
+                # Latency in "ms"
+                perf_kpi['latency'] = series_meta[name]['MEAN_LATENCY']
 
             elif name in ('TCP_RR', 'TCP_CRR', 'UDP_RR'):
 
                 # Message / RR size
-                perf_kpi['msize'] = 'NaN'
+                perf_kpi['msize'] = '0'
                 perf_kpi['rrsize'] = metadata['RR_SIZE']
 
                 # Bandwidth in "Mbits/s".
                 perf_kpi['throughput'] = 'NaN'
                 perf_kpi['transrate'] = series_meta[name]['TRANSACTION_RATE']
+
+                # Latency in "ms"
+                perf_kpi['latency'] = series_meta[name]['MEAN_LATENCY']
 
         return (0, perf_kpi)
 
@@ -267,7 +274,8 @@ class NetperfTestReporter():
         self.df_report = pd.DataFrame(self.perf_kpi_list,
                                       columns=[
                                           'driver', 'test', 'msize', 'rrsize',
-                                          'round', 'throughput', 'transrate'
+                                          'round', 'throughput', 'transrate',
+                                          'latency'
                                       ])
 
         # Rename the columns of the report DataFrame
@@ -278,7 +286,8 @@ class NetperfTestReporter():
             'rrsize': 'RRSize',
             'round': 'Round',
             'throughput': 'Throughput(10^6bits/s)',
-            'transrate': 'TransRate(per sec)'
+            'transrate': 'TransRate(per sec)',
+            'latency': 'Latency(ms)'
         },
                               inplace=True)
 
