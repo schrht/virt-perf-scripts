@@ -41,6 +41,9 @@ v2.1    2020-01-02  charles.shih  Technical Preview, collect SAR logs.
 v2.1.1  2020-01-02  charles.shih  Add switch for technical preview features.
 v2.2    2020-01-03  charles.shih  Use customized plots generator.
 v2.2.1  2020-03-13  charles.shih  PEP-8 Formatting.
+v2.3    2020-07-22  charles.shih  Name all files uniformly.
+v2.4    2020-07-22  charles.shih  Technical Preview, wait before collection.
+v2.5    2020-07-22  charles.shih  Log the fio command.
 """
 
 import os
@@ -328,6 +331,9 @@ class FioTestRunner:
             if support_idleness and not support_sar:
                 command += ' --idle-prof=percpu'
 
+            # Technical Preview: Wait before collection
+            command += ' --ramp_time=20'
+
             # Generate bw/iops/lat logs in their lifetime for the plots
             if self.plots:
                 prefix = output_path + os.sep + casename
@@ -347,7 +353,7 @@ class FioTestRunner:
 
             # Technical Preview: SAR
             if support_sar:
-                pre_command += 'sar -A 1 -o data.sa &>/dev/null & '
+                pre_command += 'sar -A 1 -o %s.sa &>/dev/null & ' % casename
 
             # Set post-command
             if self.plots:
@@ -360,8 +366,14 @@ class FioTestRunner:
             if support_sar:
                 post_command += 'pushd %s &>/dev/null; ' % output_path
                 post_command += 'killall sar; '
-                post_command += 'sar -f data.sa -u > sar-cpu.log; '
+                post_command += 'sar -f %s.sa -u > %s-sa_cpu.log; ' % (
+                    casename, casename)
                 post_command += 'popd &>/dev/null; '
+
+            # Log the fio command
+            post_command += 'pushd %s &>/dev/null; ' % output_path
+            post_command += 'echo %s > %s.cmd; ' % (command, casename)
+            post_command += 'popd &>/dev/null; '
 
             # Collect log files and create tarball
             post_command += 'pushd %s &>/dev/null' % output_path

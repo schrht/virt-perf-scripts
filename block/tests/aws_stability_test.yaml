@@ -1,7 +1,7 @@
 FioTestRunner:
   log_path: ./aws_stability_test
   backend: i3en.24xlarge
-  driver: Ephemeral(NVMe)
+  driver: Ephemeral.NVMe
   fs: raw
   rounds: 1
   filename: /dev/nvme1n1:/dev/nvme2n1:/dev/nvme3n1:/dev/nvme4n1:/dev/nvme5n1:/dev/nvme6n1:/dev/nvme7n1:/dev/nvme8n1
