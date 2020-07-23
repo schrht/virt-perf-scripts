@@ -2,10 +2,12 @@
 
 
 ########################################################################################
-# Function: Convert original log file to json log.
-# Author: boyang@redhat.com
+# Function: 
+#   Convert original log file to json log.
+# Author:
+#    boyang@redhat.com
 # History:
-#	1.0.0 - 06/03/2020 - boyang - Draft script.
+#   v1.0.0 - 06/03/2020 - boyang - Draft script.
 ########################################################################################
 
 
@@ -21,19 +23,19 @@ import subprocess
 # Linux release.
 release = subprocess.Popen("cat /etc/redhat-release", shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 release = release.stdout.read().decode("utf-8").strip("\n")
-print("DEBUG: release %s" % release)
 # kernel version.
 kernel = platform.platform()
-print("DEBUG: kernel %s" % kernel)
 # VM CPU count
 cpu = os.cpu_count()
-print("DEBUG: cpu %s" % cpu)
 # VM hostname and ip.
 hostname = socket.gethostname()
 local_host = socket.gethostbyname(hostname)
+
+print("DEBUG: release %s" % release)
+print("DEBUG: kernel %s" % kernel)
+print("DEBUG: cpu %s" % cpu)
 print("DEBUG: local_host %s" % local_host)
-# Netserver host ip.
-#remote_host = ""
+
 # Main network performace output.
 rr_size=""
 m_size=""
@@ -42,23 +44,22 @@ m_size=""
 # Check logs path.
 log_path = "/tmp/netperf_result/"
 if not os.path.exists(log_path):
-	print("WARNING: %s doesn't exist!" % log_path)
-	sys.exit(1)
+    print("WARNING: %s doesn't exist! Confirm netperf test has been done." % log_path)
+    sys.exit(1)
 else:
+    print("INFO: %s exists!" % log_path)
     logs = os.listdir(log_path)
     if len(logs) == 0:
-    	print("ERROR: Can't find logs files")    
+    	print("ERROR: Can't find any log file under %s." % log_path)    
     	sys.exit(1)
     else:
-    	print("INFO: Found logs files: %s" % logs)
-
-    print("INFO: %s exists!" % log_path)
+    	print("INFO: Found log files: %s" % logs)
 
 
 # Handle every log. Convert it to a json file.
 for l in logs:
     output_format = []
-    print("INFO: Handle file: %s" % l)
+    print("INFO: =============Handle file: %s.=============" % l)
 
     # Current test case name
     cur_case = l.split("-")[0]
@@ -67,9 +68,10 @@ for l in logs:
     driver = l.split("-")[1]
     # m_size or rr_size
     if "RR" in cur_case:
-        print("RR or CRR size")
+        print("INFO: RR or CRR size")
         rr_size = l.split("-")[2]
     else:
+        print("INFO: M size")
         m_size = l.split("-")[2]
     # Instance
     instance = l.split("-")[3]
@@ -81,7 +83,7 @@ for l in logs:
     with open (os.path.join(log_path, l), "r") as f:
         lines=f.readlines()
 
-    print("debug: lines %s" % lines)
+    print("DEBUG: lines: %s" % lines)
 
     keys=[k for k in range(0, len(lines))]
     result={k:v for k, v in zip(keys, lines[::-1])}
@@ -132,6 +134,6 @@ for l in logs:
     print("DEBUG: json: %s" % json_str)
 
 
-    # Write tempalte2 to a json file
+    # Write tempalte2 to a json file.
     with open(os.path.join(log_path, l + ".json"), "w") as fw:
         json.dump(template2, fw, indent=4)

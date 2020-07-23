@@ -13,6 +13,7 @@ History:
     v1.0.0  2018-10-11  boyang  Re-build netperf script which run in netperf client.
     v1.1.0  2018-12-03  boyang  Split STREAM mode and RR mode tests as different params.
     v2.0.0  2020-07-06  boyang  Get drivers names dynamically.
+    v2.0.1  2020-07-06  boyang  Remove some parameters not used.
 """
 
 
@@ -63,18 +64,9 @@ class NetperfTestRunner:
                 log_path: str
                     Where the *.nplog files will be saved to.
                      Example: "/root/tmp/netperf_log/"
-                 install_path: str
-                     The full tools installation script.
-                     Example: "/root/tools_installation.sh"
-                 ssh_key: str
-                     SSH KEY to access any target VM as they own the same SSH KEY.
-                     Example: "~/.ssh/id_rsa_private"
                  exe_time: int
                      Execution time of a netperf case
                      Example: 60
-                # driver: list
-                #     NIC type. HERE. Only support VMXNET3
-                #     Example: "vmxnet3", "e1000e", "e1000"
                  instances: list
                      How many instances run a netperf case
                      Example: 1, 2, 4, 8
@@ -102,24 +94,6 @@ class NetperfTestRunner:
             exit(1)
         else:
             self.log_path = params['log_path']
-
-        if 'install_path' not in params:
-            print('[ERROR] Missing required params: params[install_path]')
-            exit(1)
-        elif type(params['install_path']) not in (type(u''), type(b'')):
-            print('[ERROR] params[install_path] must be string.')
-            exit(1)
-        else:
-            self.install_path = params['install_path']
-
-        if 'ssh_key' not in params:
-            print('[ERROR] Missing required params: params[ssh_key]')
-            exit(1)
-        elif type(params['ssh_key']) not in (type(u''), type(b'')):
-            print('[ERROR] params[ssh_key] must be string.')
-            exit(1)
-        else:
-            self.ssh_key = params['ssh_key']
 
         if 'exe_time' not in params:
             print('[ERROR] Missing required params: params[exe_time]')
@@ -308,12 +282,10 @@ class NetperfTestRunner:
             os.system(command)
 
 
-def get_cli_params(log_path, install_path, ssh_key, exe_time, instance, rounds, data_modes, rr_size, m_size):
+def get_cli_params(log_path, exe_time, instance, rounds, data_modes, rr_size, m_size):
     """Get parameters from the CLI.
     Args:
         log_path: Store all logs.
-        install_path: Latency param
-        ssh_key: Latency param
         exe_time: Run time, default 60
         instance: Counts of netperf process
         rounds: Counts of run of a case
@@ -327,10 +299,6 @@ def get_cli_params(log_path, install_path, ssh_key, exe_time, instance, rounds, 
 
     if log_path:
         cli_params['log_path'] = log_path
-    if install_path:
-        cli_params['install_path'] = install_path
-    if ssh_key:
-        cli_params['ssh_key'] = ssh_key
     if exe_time:
         cli_params['exe_time'] = int(exe_time)
     if instance:
@@ -392,8 +360,6 @@ def run_netperf_test(rmt_ip, params={}):
 @click.command()
 @click.argument('rmt_ip')
 @click.option('--log_path', help='DIR stores logs.')
-@click.option('--install_path', help='The script installs tools required.')
-@click.option('--ssh_key', help='The SSH KEY is used to access any VM.')
 @click.option('--exe_time', type=click.IntRange(1, 60), help='How much time current netperf case run.')
 #@click.option('--driver', help='NIC types include vmxnet3 / e1000 / e1000e. Current ONLY supports vmxnet3.')
 @click.option('--instance', type=click.IntRange(1, 10), help='[NETPERF]How many instances be started.')
@@ -401,8 +367,7 @@ def run_netperf_test(rmt_ip, params={}):
 @click.option('--data_modes', help='[NETPERF] Test modes includes STREAM and RR and CRR')
 @click.option('--rr_size', help='[NETPERF] RR size when test RR mode')
 @click.option('--m_size', help='[NETPERF] M size when test STREAM mode')
-def cli(rmt_ip, log_path, install_path, ssh_key, exe_time,
-        instance, rounds, data_modes, rr_size, m_size):
+def cli(rmt_ip, log_path, exe_time, instance, rounds, data_modes, rr_size, m_size):
     """Command line interface.
 
     Take arguments from CLI, load default parameters from yaml file.
@@ -410,8 +375,6 @@ def cli(rmt_ip, log_path, install_path, ssh_key, exe_time,
 
     Args:
         log_path: Store all logs.
-        install_path: Latency param
-        ssh_key: Latency param
         exe_time: Run time, default 60
         instance: Counts of netperf process
         rounds: Counts of run of a case
@@ -420,8 +383,7 @@ def cli(rmt_ip, log_path, install_path, ssh_key, exe_time,
         m_size: Size for STREAM
     """
     # Read user specified parameters from CLI
-    cli_params = get_cli_params(log_path, install_path, ssh_key,
-                                exe_time,instance, rounds, data_modes, rr_size, m_size)
+    cli_params = get_cli_params(log_path, exe_time,instance, rounds, data_modes, rr_size, m_size)
     print("DEBUG: Params from CLI:")
     print(cli_params)
 

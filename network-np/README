@@ -1,18 +1,22 @@
 #######
-	Usage:
-	0. There is NO any relationship between platforms and main scripts.
+	Note:
+	0. There is NO any relationship between platforms(esxi, hyper-v, aws, azure etc.) and main scripts.
 	1. env DIR. Guide how to meet test requirements.
-  	2. Run "python virt-netperf-test.py $remote_ip" in a client as netperf. And generate logs in /tmp/.
-	3. Run "python result-convert.py" in above client and will convert logs into a json file.
 
 
 #######
 	Requirements:
-	0. ENV Denpendencies:
+	0. ENV Denpendencies, Should resolve the installation of them in rhel-7, rhel-8, fedora etc:
 		- yum install automake m4
 		- wget http://ftp.gnu.org/gnu/texinfo/texinfo-6.7.tar.gz (Get latest version from http://ftp.gnu.org/gnu/texinfo/).
 		- git clone https://github.com/HewlettPackard/netperf.git and compile source code  with --enable-burst --enable-demo=yes.
-	1. Runtime Denpendencies:
+	1. Runtime Denpendencies. Should resolve the installation of them in rhel-7, rhel-8, fedora etc:
 		- click
 		- pyyaml
 
+
+#######
+	Usage:
+	0. Run "netserver" in terminal of remote host.
+  	1. Run "python virt-netperf-test.py $remote_ip" in a client as netperf. And will generate logs in /tmp/.
+	2. Run "python result-convert.py" in above client(netperf), will convert logs into a json file.

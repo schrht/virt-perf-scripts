@@ -1,5 +1,0 @@
-#######
-	0. There is NO any relationship between platforms and main scripts.
-	1. env DIR. Guide how to meet test requirements.
-  	2. Run "python virt-netperf-test.py $remote_ip" in a client as netperf. And generate logs in /tmp/.
-	3. Run "python result-convert.py" in above client and will convert logs into a json file.
