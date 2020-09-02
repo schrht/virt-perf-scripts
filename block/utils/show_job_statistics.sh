@@ -71,9 +71,9 @@ for file in $flist; do
 	gm=$(cat $file | cut -f2 -d, | geometric_mean)
 	sd=$(cat $file | cut -f2 -d, | stdev)
 	pt=$(echo "scale=2; $sd*100/$gm" | bc)
-	table="${table}$(printf '%s,%s,%d,%.2f,%.2f,%.2f%%' $re $se $no $gm $sd $pt)\n"
+	table="${table}$(printf '%s;%s;%d;%.2f;%.2f;%.2f%%' $re $se $no $gm $sd $pt)\n"
 done
 
-echo -e $table | sort -t , -k 3 -n |
-	column -t -s , -R 3,4,5,6 -N Release,Series,Job#,Geomean,Stdev,Stdev%
+echo -e $table | sort -t ';' -k 3 -n |
+	column -t -s ';' -R 3,4,5,6 -N Release,Series,Job#,Geomean,Stdev,Stdev%
 exit 0
