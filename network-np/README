@@ -11,8 +11,11 @@
 		- wget http://ftp.gnu.org/gnu/texinfo/texinfo-6.7.tar.gz (Get latest version from http://ftp.gnu.org/gnu/texinfo/).
 		- git clone https://github.com/HewlettPackard/netperf.git and compile source code  with --enable-burst --enable-demo=yes.
 	1. Runtime Denpendencies. Should resolve the installation of them in rhel-7, rhel-8, fedora etc:
-		- click
-		- pyyaml
+		- python(or python3): yum install python3
+		- click: yum install python3-click
+		- pyyaml: yum install python3-pyyaml
+		- pip3 install pandas
+		- pip3 install scipy
 
 
 #######
@@ -20,3 +23,5 @@
 	0. Run "netserver" in terminal of remote host.
   	1. Run "python virt-netperf-test.py $remote_ip" in a client as netperf. And will generate logs in /tmp/.
 	2. Run "python result-convert.py" in above client(netperf), will convert logs into a json file.
+	3. Run "python3 GenerateNetworkTestReport.py --result_path /tmp/netperf_result --report_csv $filename.csv", generate csv test report.
+	4. Run "python3 GenerateNetworkBenchmarkReport.py --base_csv $base_csv_filename.csv --test_csv $test_csv_filename.csv --report_csv $test_report.csv", generate BenchmarkReport $test_report.csv compared between test_csv and base_csv.
