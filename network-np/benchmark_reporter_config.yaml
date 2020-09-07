@@ -19,4 +19,4 @@ FlentBenchmarkReporter:
     - source_label: Latency(ms)
       target_label: Latency
       target_unit: "ms"
-      higher_is_better: "no"
+      higher_is_better: no
