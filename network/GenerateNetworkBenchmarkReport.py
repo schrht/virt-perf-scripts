@@ -68,6 +68,12 @@ class FlentBenchmarkReporter():
             kpi.update(kpi_attr)
             self.kpis.append(kpi)
 
+        self.defaults = {}
+        if 'defaults' in self.config:
+            self.defaults.update(self.config['defaults'])
+        self.defaults.setdefault('dataframe_round', 4)
+        self.defaults.setdefault('dataframe_fillna', 'NaN')
+
         # The DataFrame to store base samples and test samples
         self.df_base = self.df_test = None
 
@@ -326,8 +332,10 @@ class FlentBenchmarkReporter():
 
     def _format_report_dataframe(self):
         """Format the report DataFrame."""
-        self.df_report = self.df_report.round(4)
-        self.df_report = self.df_report.fillna('NaN')
+        # Format the DataFrame
+        self.df_report = self.df_report.round(self.defaults['dataframe_round'])
+        self.df_report = self.df_report.fillna(
+            self.defaults['dataframe_fillna'])
 
         # Add units to the columns
         for key in self.keys:
