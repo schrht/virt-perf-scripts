@@ -5,6 +5,7 @@ FioTestRunner:
   fs: NaN
   rounds: 3
   filename: /tmp/testfile
+  size: 80G
   runtime: 1m
   ioengine: libaio
   direct: 1

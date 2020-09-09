@@ -5,6 +5,7 @@ FioTestRunner:
   fs: NaN
   rounds: 5
   filename: /dev/xvdf
+  size: 80G
   runtime: 1m
   ioengine: libaio
   direct: 1

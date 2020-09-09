@@ -84,6 +84,9 @@ class FioTestRunner:
                     How many rounds the fio test will be repeated.
                 filename: str
                     [FIO] The disk or specified file(s) to be tested by fio.
+                size: str
+                    [FIO] The total size of file I/O for each thread of this
+                    job.
                 runtime: str
                     [FIO] Terminate a job after the specified period of time.
                 ioengine: str
@@ -158,6 +161,15 @@ class FioTestRunner:
             exit(1)
         else:
             self.filename = params['filename']
+
+        if 'size' not in params:
+            print('[ERROR] Missing required params: params[size]')
+            exit(1)
+        elif type(params['size']) not in (type(u''), type(b'')):
+            print('[ERROR] params[size] must be string.')
+            exit(1)
+        else:
+            self.size = params['size']
 
         if 'runtime' not in params:
             print('[ERROR] Missing required params: params[runtime]')
@@ -306,7 +318,7 @@ class FioTestRunner:
             command = 'fio'
             command += ' --name=%s' % casename
             command += ' --filename=%s' % self.filename
-            command += ' --size=80G'
+            command += ' --size=%s' % self.size
             command += ' --ioengine=%s' % self.ioengine
             command += ' --direct=%s' % self.direct
             command += ' --rw=%s' % rw
@@ -436,9 +448,9 @@ class FioTestRunner:
         return None
 
 
-def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine,
-                   direct, numjobs, rw_list, bs_list, iodepth_list, log_path,
-                   plots, dryrun):
+def get_cli_params(backend, driver, fs, rounds, filename, size, runtime,
+                   ioengine, direct, numjobs, rw_list, bs_list, iodepth_list,
+                   log_path, plots, dryrun):
     """Get parameters from the CLI."""
     cli_params = {}
 
@@ -452,6 +464,8 @@ def get_cli_params(backend, driver, fs, rounds, filename, runtime, ioengine,
         cli_params['rounds'] = int(rounds)
     if filename is not None:
         cli_params['filename'] = filename
+    if size is not None:
+        cli_params['size'] = size
     if runtime is not None:
         cli_params['runtime'] = runtime
     if ioengine is not None:
@@ -520,6 +534,11 @@ def run_fio_test(params={}):
     '--filename',
     help='[FIO] The disk(s) or specified file(s) to be tested by fio. You can \
 specify a number of targets by separating the names with a \':\' colon.')
+@click.option(
+    '--size',
+    help='[FIO] The total size of file I/O for each thread of this job. You \
+can specify a value like "10g", "20%", "0" (for the physical size of the \
+given files or devices).')
 @click.option('--runtime',
               help='[FIO] Terminate a job after the specified period of time.')
 @click.option('--ioengine',
@@ -547,7 +566,7 @@ bw/iops/lat logs and plots in their lifetime.')
               default=None,
               help='Print the commands \
 that would be executed, but do not execute them.')
-def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
+def cli(backend, driver, fs, rounds, filename, size, runtime, ioengine, direct,
         numjobs, rw_list, bs_list, iodepth_list, log_path, plots, dryrun):
     """Command line interface.
 
@@ -556,9 +575,9 @@ def cli(backend, driver, fs, rounds, filename, runtime, ioengine, direct,
 
     """
     # Read user specified parameters from CLI
-    cli_params = get_cli_params(backend, driver, fs, rounds, filename, runtime,
-                                ioengine, direct, numjobs, rw_list, bs_list,
-                                iodepth_list, log_path, plots, dryrun)
+    cli_params = get_cli_params(backend, driver, fs, rounds, filename, size,
+                                runtime, ioengine, direct, numjobs, rw_list,
+                                bs_list, iodepth_list, log_path, plots, dryrun)
 
     # Read user configuration from yaml file
     yaml_params = get_yaml_params()
