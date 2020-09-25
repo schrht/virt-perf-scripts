@@ -58,6 +58,13 @@ else:
 
 # Handle every log. Convert it to a json file.
 for l in logs:
+
+    # Some log can't meet requirment of conver.
+    log_size = os.path.getsize(l)
+    if log_size < 200:
+        print("INFO: %s can't be converted, skip it")
+        continue
+
     output_format = []
     print("INFO: =============Handle file: %s.=============" % l)
 
