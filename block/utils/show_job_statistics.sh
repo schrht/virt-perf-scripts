@@ -8,7 +8,8 @@ function show_usage() {
 	echo "$(basename $0) <-r RELEASE> <-s SERIES>"
 	echo "RELEASE: RHEL7.9 RHEL8.3 ..."
 	echo "SERIES : iops bw lat clat slat"
-	echo "Note: this script must be run under log path."
+	echo "Limitation: 1. This script should be run where the log is."
+	echo "            2. Python version should be higher than 3.8."
 }
 
 function geometric_mean() {
