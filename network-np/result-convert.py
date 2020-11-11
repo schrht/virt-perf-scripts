@@ -60,7 +60,7 @@ else:
 for l in logs:
 
     # Some log can't meet requirment of conver.
-    log_size = os.path.getsize(l)
+    log_size = os.path.getsize(log_path + l)
     if log_size < 200 or l.endswith("json"):
         print("INFO: %s can't be converted, skip it" % l)
         continue
